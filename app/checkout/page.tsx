@@ -269,9 +269,11 @@ export default function CheckoutPage() {
                           }`}
                         >
                           <div className="flex flex-col items-center gap-2">
-                            <div className="w-16 h-16 bg-red-600 rounded-lg flex items-center justify-center">
-                              <span className="text-white font-bold text-xs">EcoCash</span>
-                            </div>
+                            <img 
+                              src="https://www.ecocash.co.zw/wp-content/uploads/2021/03/ecocash-logo.png" 
+                              alt="EcoCash"
+                              className="w-16 h-16 object-contain"
+                            />
                             <span className="text-sm font-medium text-gray-700">EcoCash</span>
                           </div>
                         </button>
@@ -287,9 +289,11 @@ export default function CheckoutPage() {
                           }`}
                         >
                           <div className="flex flex-col items-center gap-2">
-                            <div className="w-16 h-16 bg-blue-600 rounded-lg flex items-center justify-center">
-                              <span className="text-white font-bold text-xs">Paynow</span>
-                            </div>
+                            <img 
+                              src="https://www.paynow.co.zw/Content/Images/logo.png" 
+                              alt="Paynow"
+                              className="w-16 h-16 object-contain"
+                            />
                             <span className="text-sm font-medium text-gray-700">Paynow</span>
                           </div>
                         </button>
@@ -305,9 +309,11 @@ export default function CheckoutPage() {
                           }`}
                         >
                           <div className="flex flex-col items-center gap-2">
-                            <div className="w-16 h-16 bg-purple-600 rounded-lg flex items-center justify-center">
-                              <span className="text-white font-bold text-xs">Stripe</span>
-                            </div>
+                            <img 
+                              src="https://upload.wikimedia.org/wikipedia/commons/b/ba/Stripe_Logo%2C_revised_2016.svg" 
+                              alt="Stripe"
+                              className="w-16 h-16 object-contain"
+                            />
                             <span className="text-sm font-medium text-gray-700">Stripe</span>
                           </div>
                         </button>
@@ -323,9 +329,9 @@ export default function CheckoutPage() {
                           }`}
                         >
                           <div className="flex flex-col items-center gap-2">
-                            <div className="w-16 h-16 bg-green-600 rounded-lg flex items-center justify-center">
+                            <div className="w-16 h-16 bg-gradient-to-br from-green-600 to-green-700 rounded-lg flex items-center justify-center shadow-md">
                               <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
                               </svg>
                             </div>
                             <span className="text-sm font-medium text-gray-700">Bank Transfer</span>
