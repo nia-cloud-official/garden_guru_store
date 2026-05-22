@@ -7,6 +7,8 @@ import { useCart } from '@/contexts/CartContext';
 import { formatPrice, validateZimbabwePhone, cleanPhone } from '@/lib/utils';
 import toast from 'react-hot-toast';
 
+export const dynamic = 'force-dynamic';
+
 export default function CheckoutPage() {
   const router = useRouter();
   const { cart, cartCount, cartSubtotal, clearCart } = useCart();

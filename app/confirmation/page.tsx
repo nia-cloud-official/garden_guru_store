@@ -1,10 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { formatPrice } from '@/lib/utils';
+
+export const dynamic = 'force-dynamic';
 
 interface OrderDetails {
   order_number: string;
@@ -22,7 +24,7 @@ interface OrderDetails {
   }>;
 }
 
-export default function ConfirmationPage() {
+function ConfirmationContent() {
   const searchParams = useSearchParams();
   const orderId = searchParams.get('order_id');
   const isDemo = searchParams.get('demo') === '1';
@@ -200,5 +202,17 @@ export default function ConfirmationPage() {
         </div>
       </div>
     </section>
+  );
+}
+
+export default function ConfirmationPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    }>
+      <ConfirmationContent />
+    </Suspense>
   );
 }
