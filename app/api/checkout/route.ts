@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
       .select()
       .single();
 
-    if (orderError) {
+    if (orderError || !orderData) {
       console.error('Error creating order:', orderError);
       return NextResponse.json({ error: 'Failed to create order' }, { status: 500 });
     }
