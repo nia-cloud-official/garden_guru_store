@@ -52,7 +52,7 @@ export default function ConfirmationPage() {
         const { data: itemsData, error: itemsError } = await supabase
           .from('store_order_items')
           .select('*')
-          .eq('order_id', orderData.id);
+          .eq('order_id', (orderData as any).id);
 
         if (itemsError) {
           console.error('Error fetching order items:', itemsError);
