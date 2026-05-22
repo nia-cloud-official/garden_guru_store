@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
 
     const { data: orderData, error: orderError } = await supabase
       .from('store_orders')
-      .insert(orderInsert)
+      .insert(orderInsert as any)
       .select()
       .single();
 
@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
       line_total: item.product_price * item.quantity,
     }));
 
-    const { error: itemsError } = await supabase.from('store_order_items').insert(orderItems);
+    const { error: itemsError } = await supabase.from('store_order_items').insert(orderItems as any);
 
     if (itemsError) {
       console.error('Error creating order items:', itemsError);
