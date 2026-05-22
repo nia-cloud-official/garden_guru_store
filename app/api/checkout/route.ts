@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
     // Create order in database
     const { data: orderData, error: orderError } = await supabase
       .from('store_orders')
-      .insert({
+      .insert([{
         order_number: orderId,
         first_name: firstName,
         last_name: lastName,
@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
         status: 'pending_payment',
         payment_method: 'paynow',
         payment_status: 'pending',
-      })
+      }])
       .select()
       .single();
 
