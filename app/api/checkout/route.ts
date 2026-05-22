@@ -124,7 +124,7 @@ export async function POST(request: NextRequest) {
 
     // Create order items
     const orderItems: OrderItemInsert[] = cart.map((item) => ({
-      order_id: orderData.id,
+      order_id: (orderData as any).id,
       product_id: item.product_id,
       product_name: item.product_name,
       product_price: item.product_price,
