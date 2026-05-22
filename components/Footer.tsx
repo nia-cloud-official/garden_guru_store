@@ -16,8 +16,8 @@ export default function Footer() {
             <h4 className="text-lg font-semibold mb-4">Quick Links</h4>
             <ul className="space-y-2">
               <li>
-                <a href="/" className="text-gray-400 hover:text-primary transition-colors">
-                  Home
+                <a href="https://www.gardenguru.co.zw/" className="text-gray-400 hover:text-primary transition-colors">
+                  The Official Website
                 </a>
               </li>
               <li>
