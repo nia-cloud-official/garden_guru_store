@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { generateOrderId } from '@/lib/utils';
+import type { Database } from '@/types/database';
+
+type OrderInsert = Database['public']['Tables']['store_orders']['Insert'];
+type OrderItemInsert = Database['public']['Tables']['store_order_items']['Insert'];
 
 interface CartItem {
   product_id: number;
@@ -95,19 +99,21 @@ export async function POST(request: NextRequest) {
     const orderId = generateOrderId();
 
     // Create order in database
+    const orderInsert: OrderInsert = {
+      order_number: orderId,
+      first_name: firstName,
+      last_name: lastName,
+      phone: phone,
+      subtotal: subtotal,
+      total_amount: subtotal,
+      status: 'pending_payment',
+      payment_method: 'paynow',
+      payment_status: 'pending',
+    };
+
     const { data: orderData, error: orderError } = await supabase
       .from('store_orders')
-      .insert([{
-        order_number: orderId,
-        first_name: firstName,
-        last_name: lastName,
-        phone: phone,
-        subtotal: subtotal,
-        total_amount: subtotal,
-        status: 'pending_payment',
-        payment_method: 'paynow',
-        payment_status: 'pending',
-      }])
+      .insert([orderInsert])
       .select()
       .single();
 
@@ -117,7 +123,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create order items
-    const orderItems = cart.map((item) => ({
+    const orderItems: OrderItemInsert[] = cart.map((item) => ({
       order_id: orderData.id,
       product_id: item.product_id,
       product_name: item.product_name,
