@@ -59,7 +59,7 @@ export default function ConfirmationPage() {
         }
 
         setOrder({
-          ...orderData,
+          ...(orderData as any),
           items: itemsData || [],
         });
       } catch (error) {
