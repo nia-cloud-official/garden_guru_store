@@ -13,6 +13,9 @@ export default function CheckoutPage() {
   const router = useRouter();
   const { cart, cartCount, cartSubtotal, clearCart } = useCart();
   const [loading, setLoading] = useState(false);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('');
+  const [showBankModal, setShowBankModal] = useState(false);
+  const [proofOfPayment, setProofOfPayment] = useState<File | null>(null);
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -61,6 +64,16 @@ export default function CheckoutPage() {
       return;
     }
 
+    if (!selectedPaymentMethod) {
+      toast.error('Please select a payment method');
+      return;
+    }
+
+    if (selectedPaymentMethod === 'bank') {
+      setShowBankModal(true);
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -71,6 +84,7 @@ export default function CheckoutPage() {
           firstName: formData.firstName.trim(),
           lastName: formData.lastName.trim(),
           phone: cleanPhone(formData.phone),
+          paymentMethod: selectedPaymentMethod,
           cart: cartItems.map((item) => ({
             product_id: item.product.id,
             product_name: item.product.name,
@@ -94,6 +108,50 @@ export default function CheckoutPage() {
       } else {
         router.push(`/confirmation?order_id=${data.order_id}&demo=1`);
       }
+    } catch (error: any) {
+      toast.error(error.message || 'Something went wrong');
+      setLoading(false);
+    }
+  };
+
+  const handleBankTransferSubmit = async () => {
+    if (!proofOfPayment) {
+      toast.error('Please upload proof of payment');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // Create FormData for file upload
+      const formDataToSend = new FormData();
+      formDataToSend.append('firstName', formData.firstName.trim());
+      formDataToSend.append('lastName', formData.lastName.trim());
+      formDataToSend.append('phone', cleanPhone(formData.phone));
+      formDataToSend.append('paymentMethod', 'bank');
+      formDataToSend.append('proofOfPayment', proofOfPayment);
+      formDataToSend.append('cart', JSON.stringify(cartItems.map((item) => ({
+        product_id: item.product.id,
+        product_name: item.product.name,
+        product_price: item.product.price,
+        quantity: item.quantity,
+      }))));
+      formDataToSend.append('subtotal', cartSubtotal.toString());
+
+      const response = await fetch('/api/checkout/bank-transfer', {
+        method: 'POST',
+        body: formDataToSend,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Checkout failed');
+      }
+
+      clearCart();
+      setShowBankModal(false);
+      router.push(`/confirmation?order_id=${data.order_id}&bank=1`);
     } catch (error: any) {
       toast.error(error.message || 'Something went wrong');
       setLoading(false);
@@ -190,14 +248,96 @@ export default function CheckoutPage() {
                       />
                       {errors.phone && <p className="mt-1 text-sm text-red-500">{errors.phone}</p>}
                       <p className="mt-2 text-sm text-gray-500">
-                        We'll send a Paynow / EcoCash payment prompt to this number.
+                        For payment confirmation and order updates.
                       </p>
+                    </div>
+
+                    {/* Payment Methods */}
+                    <div className="pt-6">
+                      <label className="block text-sm font-medium text-gray-700 mb-4">
+                        Select Payment Method *
+                      </label>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        {/* EcoCash */}
+                        <button
+                          type="button"
+                          onClick={() => setSelectedPaymentMethod('ecocash')}
+                          className={`p-4 border-2 rounded-xl transition-all hover:shadow-lg ${
+                            selectedPaymentMethod === 'ecocash'
+                              ? 'border-[#00b050] bg-[#00b050]/5'
+                              : 'border-gray-200 hover:border-[#00b050]/50'
+                          }`}
+                        >
+                          <div className="flex flex-col items-center gap-2">
+                            <div className="w-16 h-16 bg-red-600 rounded-lg flex items-center justify-center">
+                              <span className="text-white font-bold text-xs">EcoCash</span>
+                            </div>
+                            <span className="text-sm font-medium text-gray-700">EcoCash</span>
+                          </div>
+                        </button>
+
+                        {/* Paynow */}
+                        <button
+                          type="button"
+                          onClick={() => setSelectedPaymentMethod('paynow')}
+                          className={`p-4 border-2 rounded-xl transition-all hover:shadow-lg ${
+                            selectedPaymentMethod === 'paynow'
+                              ? 'border-[#00b050] bg-[#00b050]/5'
+                              : 'border-gray-200 hover:border-[#00b050]/50'
+                          }`}
+                        >
+                          <div className="flex flex-col items-center gap-2">
+                            <div className="w-16 h-16 bg-blue-600 rounded-lg flex items-center justify-center">
+                              <span className="text-white font-bold text-xs">Paynow</span>
+                            </div>
+                            <span className="text-sm font-medium text-gray-700">Paynow</span>
+                          </div>
+                        </button>
+
+                        {/* Stripe */}
+                        <button
+                          type="button"
+                          onClick={() => setSelectedPaymentMethod('stripe')}
+                          className={`p-4 border-2 rounded-xl transition-all hover:shadow-lg ${
+                            selectedPaymentMethod === 'stripe'
+                              ? 'border-[#00b050] bg-[#00b050]/5'
+                              : 'border-gray-200 hover:border-[#00b050]/50'
+                          }`}
+                        >
+                          <div className="flex flex-col items-center gap-2">
+                            <div className="w-16 h-16 bg-purple-600 rounded-lg flex items-center justify-center">
+                              <span className="text-white font-bold text-xs">Stripe</span>
+                            </div>
+                            <span className="text-sm font-medium text-gray-700">Stripe</span>
+                          </div>
+                        </button>
+
+                        {/* Bank Transfer */}
+                        <button
+                          type="button"
+                          onClick={() => setSelectedPaymentMethod('bank')}
+                          className={`p-4 border-2 rounded-xl transition-all hover:shadow-lg ${
+                            selectedPaymentMethod === 'bank'
+                              ? 'border-[#00b050] bg-[#00b050]/5'
+                              : 'border-gray-200 hover:border-[#00b050]/50'
+                          }`}
+                        >
+                          <div className="flex flex-col items-center gap-2">
+                            <div className="w-16 h-16 bg-green-600 rounded-lg flex items-center justify-center">
+                              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                              </svg>
+                            </div>
+                            <span className="text-sm font-medium text-gray-700">Bank Transfer</span>
+                          </div>
+                        </button>
+                      </div>
                     </div>
 
                     <div className="pt-6">
                       <button
                         type="submit"
-                        disabled={loading}
+                        disabled={loading || !selectedPaymentMethod}
                         className="w-full btn-primary flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {loading ? (
@@ -208,9 +348,9 @@ export default function CheckoutPage() {
                         ) : (
                           <>
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
-                            Pay Now via Paynow
+                            {selectedPaymentMethod === 'bank' ? 'View Bank Details' : 'Proceed to Payment'}
                           </>
                         )}
                       </button>
@@ -276,6 +416,114 @@ export default function CheckoutPage() {
           </div>
         </div>
       </section>
+
+      {/* Bank Transfer Modal */}
+      {showBankModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-8">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-3xl font-comic text-gray-900">Bank Transfer Details</h3>
+                <button
+                  onClick={() => setShowBankModal(false)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="bg-gradient-to-br from-[#00b050]/10 to-[#00b050]/5 rounded-2xl p-6 mb-6">
+                <h4 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <svg className="w-5 h-5 text-[#00b050]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
+                  Bank Account Information
+                </h4>
+                <div className="space-y-3 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Bank Name:</span>
+                    <span className="font-semibold text-gray-900">Banc ABC</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Branch:</span>
+                    <span className="font-semibold text-gray-900">Jason Moyo Street</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Account Name:</span>
+                    <span className="font-semibold text-gray-900">Jessie Matthews Hardware t/a The Garden Guru</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">RTGS Account:</span>
+                    <span className="font-semibold text-gray-900 font-mono">60503315511012</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Nostro Account:</span>
+                    <span className="font-semibold text-gray-900 font-mono">60503316602022</span>
+                  </div>
+                  <div className="flex justify-between pt-3 border-t border-[#00b050]/20">
+                    <span className="text-gray-600">Amount to Pay:</span>
+                    <span className="font-bold text-[#00b050] text-lg">{formatPrice(cartSubtotal)}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Upload Proof of Payment *
+                </label>
+                <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-[#00b050] transition-colors">
+                  <input
+                    type="file"
+                    accept="image/*,.pdf"
+                    onChange={(e) => setProofOfPayment(e.target.files?.[0] || null)}
+                    className="hidden"
+                    id="proof-upload"
+                  />
+                  <label htmlFor="proof-upload" className="cursor-pointer">
+                    <svg className="w-12 h-12 text-gray-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    <p className="text-sm text-gray-600 mb-1">
+                      {proofOfPayment ? proofOfPayment.name : 'Click to upload or drag and drop'}
+                    </p>
+                    <p className="text-xs text-gray-500">PNG, JPG, PDF up to 10MB</p>
+                  </label>
+                </div>
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+                <div className="flex gap-3">
+                  <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div className="text-sm text-blue-800">
+                    <p className="font-semibold mb-1">Important:</p>
+                    <p>After making the bank transfer, please upload your proof of payment. We'll verify and confirm your order within 24 hours.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                <button
+                  onClick={() => setShowBankModal(false)}
+                  className="flex-1 btn-secondary"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleBankTransferSubmit}
+                  disabled={loading || !proofOfPayment}
+                  className="flex-1 btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading ? 'Submitting...' : 'Submit Payment'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

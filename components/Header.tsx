@@ -14,12 +14,6 @@ export default function Header() {
             <img src="/assets/logo.webp" style={{height: '70px', width: '110px'}} alt="The Garden Guru Logo" className="text-[#00b050]" />
           </Link>
 
-          <nav className="hidden md:flex items-center gap-8">
-            <Link href="/shop" className="text-gray-700 hover:text-primary font-medium transition-colors">
-              Shop
-            </Link>
-          </nav>
-
           <Link href="/cart" className="relative">
             <button className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-full hover:bg-primary-dark transition-all shadow-md hover:shadow-lg">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
