@@ -10,19 +10,13 @@ export default function Header() {
     <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-glass border-b border-gray-200 shadow-sm">
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
+          <Link href="/shop" className="flex items-center gap-2">
             <img src="/assets/logo.webp" style={{height: '70px', width: '110px'}} alt="The Garden Guru Logo" className="text-[#00b050]" />
           </Link>
 
           <nav className="hidden md:flex items-center gap-8">
-            <Link href="/" className="text-gray-700 hover:text-primary font-medium transition-colors">
-              Home
-            </Link>
             <Link href="/shop" className="text-gray-700 hover:text-primary font-medium transition-colors">
               Shop
-            </Link>
-            <Link href="/contact" className="text-gray-700 hover:text-primary font-medium transition-colors">
-              Contact
             </Link>
           </nav>
 
