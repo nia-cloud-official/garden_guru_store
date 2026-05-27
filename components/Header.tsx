@@ -24,11 +24,8 @@ export default function Header() {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-6">
-            <Link href="/" className="text-gray-700 hover:text-primary font-medium transition-colors">
-              Home
-            </Link>
-            <Link href="/shop" className="text-gray-700 hover:text-primary font-medium transition-colors">
-              Shop
+            <Link href="/request" className="text-gray-700 hover:text-primary font-medium transition-colors">
+              Send a Request
             </Link>
             <Link href="/promotions" className="text-gray-700 hover:text-primary font-medium transition-colors">
               Promotions
@@ -73,16 +70,13 @@ export default function Header() {
         {/* Mobile Menu */}
         {mobileMenuOpen && (
           <nav className="md:hidden mt-4 pb-4 border-t border-gray-200 pt-4 space-y-2">
-            <Link href="/" className="block py-2 text-gray-700 hover:text-primary font-medium transition-colors">
-              Home
+                        <Link href="/request" className="text-gray-700 hover:text-primary font-medium transition-colors">
+              Send a Request
             </Link>
-            <Link href="/shop" className="block py-2 text-gray-700 hover:text-primary font-medium transition-colors">
-              Shop
-            </Link>
-            <Link href="/promotions" className="block py-2 text-gray-700 hover:text-primary font-medium transition-colors">
+            <Link href="/promotions" className="text-gray-700 hover:text-primary font-medium transition-colors">
               Promotions
             </Link>
-            <Link href="https://www.gardenguru.co.zw/" target="_blank" className="block py-2 text-gray-700 hover:text-primary font-medium transition-colors">
+            <Link href="https://www.gardenguru.co.zw/" target="_blank" className="text-gray-700 hover:text-primary font-medium transition-colors">
               About Us
             </Link>
           </nav>
