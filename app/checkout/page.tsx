@@ -25,9 +25,19 @@ export default function CheckoutPage() {
 
   const cartItems = Object.values(cart);
 
-  if (cartItems.length === 0) {
+  // Client-side only redirect
+  if (typeof window !== 'undefined' && cartItems.length === 0) {
     router.push('/shop');
     return null;
+  }
+
+  // Show loading state during SSR or when cart is empty
+  if (cartItems.length === 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -104,7 +114,9 @@ export default function CheckoutPage() {
       clearCart();
 
       if (data.redirect_url) {
-        window.location.href = data.redirect_url;
+        if (typeof window !== 'undefined') {
+          window.location.href = data.redirect_url;
+        }
       } else {
         router.push(`/confirmation?order_id=${data.order_id}&demo=1`);
       }
