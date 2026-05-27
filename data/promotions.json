@@ -1,0 +1,43 @@
+{
+  "promotions": [
+    {
+      "id": "spring-sale-2026",
+      "title": "Spring Sale",
+      "subtitle": "Up to 30% Off",
+      "description": "Celebrate the season with our beautiful spring collection. Fresh blooms at unbeatable prices!",
+      "image": "https://images.unsplash.com/photo-1490750967868-88aa4486c946?w=800&q=80",
+      "badge": "Limited Time",
+      "discount": "30",
+      "startDate": "2026-05-01",
+      "endDate": "2026-05-31",
+      "active": true,
+      "link": "/promotions/spring-sale-2026"
+    },
+    {
+      "id": "mothers-day-special",
+      "title": "Mother's Day Special",
+      "subtitle": "Show Your Love",
+      "description": "Handcrafted bouquets perfect for celebrating mom. Order now for guaranteed delivery.",
+      "image": "https://images.unsplash.com/photo-1563241527-3004b7be0ffd?w=800&q=80",
+      "badge": "New",
+      "discount": "15",
+      "startDate": "2026-05-10",
+      "endDate": "2026-05-31",
+      "active": true,
+      "link": "/promotions/mothers-day-special"
+    },
+    {
+      "id": "weekly-deals",
+      "title": "Weekly Deals",
+      "subtitle": "Fresh Picks",
+      "description": "New deals every week! Check back regularly for our freshest selections at special prices.",
+      "image": "https://images.unsplash.com/photo-1487070183336-b863922373d4?w=800&q=80",
+      "badge": "Hot Deal",
+      "discount": "20",
+      "startDate": "2026-05-20",
+      "endDate": "2026-12-31",
+      "active": true,
+      "link": "/promotions/weekly-deals"
+    }
+  ]
+}

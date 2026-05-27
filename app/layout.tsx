@@ -1,23 +1,9 @@
 import type { Metadata } from 'next';
-import { Raleway, Comic_Neue } from 'next/font/google';
 import './globals.css';
 import { CartProvider } from '@/contexts/CartContext';
 import { Toaster } from 'react-hot-toast';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-
-const raleway = Raleway({ 
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-raleway',
-});
-
-const comicNeue = Comic_Neue({ 
-  weight: ['400', '700'],
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-comic',
-});
 
 export const metadata: Metadata = {
   title: 'The Garden Guru - Fresh Flowers & Plants',
@@ -38,8 +24,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${raleway.variable} ${comicNeue.variable}`}>
-      <body className={raleway.className}>
+    <html lang="en">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;600;700;800&family=Comic+Neue:wght@400;700&display=swap" rel="stylesheet" />
+      </head>
+      <body>
         <CartProvider>
           <Header />
           <main className="min-h-screen">

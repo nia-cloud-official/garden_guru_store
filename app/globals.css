@@ -5,11 +5,12 @@
 @layer base {
   body {
     @apply bg-gray-50 text-gray-900;
+    font-family: 'Raleway', sans-serif;
   }
 }
 
 .font-comic {
-  font-family: var(--font-comic), 'Comic Sans MS', cursive;
+  font-family: 'Comic Neue', 'Comic Sans MS', cursive;
 }
 
 @layer components {
