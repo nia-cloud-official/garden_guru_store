@@ -22,7 +22,7 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   return (
     <div className="product-card group">
-      <Link href={`/shop/${product.id}`}>
+      <Link href={`/${product.id}`}>
         <div className="relative h-64 overflow-hidden">
           {product.badge && (
             <span className="badge">{product.badge}</span>
@@ -49,7 +49,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           {product.category_id ? 'Category' : 'Product'}
         </p>
         <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">
-          <Link href={`/shop/${product.id}`} className="hover:text-primary transition-colors">
+          <Link href={`/${product.id}`} className="hover:text-primary transition-colors">
             {product.name}
           </Link>
         </h3>
