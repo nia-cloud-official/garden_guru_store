@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import ProductCard from '@/components/ProductCard';
 import Link from 'next/link';
+import promotionsData from '@/data/promotions.json';
 
 async function getProducts(category?: string) {
   let query = supabase
@@ -58,6 +59,7 @@ export default async function ShopPage({
   const activeCategory = searchParams.cat || '';
   const products = await getProducts(activeCategory);
   const categories = await getCategories();
+  const activePromotions = promotionsData.promotions.filter(p => p.active).slice(0, 3);
 
   return (
     <>
@@ -173,6 +175,75 @@ export default async function ShopPage({
           </div>
         </div>
       </section>
+
+            {/* Promotions Section */}
+            {activePromotions.length > 0 && (
+              <section className="py-20 bg-gradient-to-br from-gray-50 to-white">
+                <div className="container mx-auto px-4">
+                  <div className="text-center mb-12">
+                    <h2 className="text-4xl font-bold text-gray-900 mb-4">
+                      Special <span className="font-comic text-[#00b050]">Promotions</span>
+                    </h2>
+                    <p className="text-gray-600 max-w-2xl mx-auto">
+                      Don't miss out on our exclusive deals and seasonal offers
+                    </p>
+                  </div>
+      
+                  <div className="grid md:grid-cols-3 gap-8">
+                    {activePromotions.map((promo) => (
+                      <Link 
+                        key={promo.id}
+                        href={promo.link}
+                        className="group"
+                      >
+                        <div className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border border-gray-100">
+                          <div className="relative h-48 overflow-hidden">
+                            <img 
+                              src={promo.image} 
+                              alt={promo.title}
+                              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                            />
+                            <div className="absolute top-4 right-4">
+                              <span className="bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
+                                {promo.badge}
+                              </span>
+                            </div>
+                            {promo.discount && (
+                              <div className="absolute bottom-4 left-4">
+                                <div className="bg-white/95 backdrop-blur-sm rounded-full px-4 py-2 shadow-lg">
+                                  <span className="text-2xl font-bold text-[#00b050]">{promo.discount}%</span>
+                                  <span className="text-sm text-gray-600 ml-1">OFF</span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                          <div className="p-6">
+                            <div className="text-sm text-[#00b050] font-semibold mb-2">{promo.subtitle}</div>
+                            <h3 className="text-xl font-bold text-gray-900 mb-2">{promo.title}</h3>
+                            <p className="text-gray-600 text-sm mb-4">{promo.description}</p>
+                            <div className="flex items-center text-[#00b050] font-semibold">
+                              <span>Learn More</span>
+                              <svg className="w-5 h-5 ml-2 group-hover:translate-x-2 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                              </svg>
+                            </div>
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+      
+                  <div className="text-center mt-12">
+                    <Link href="/promotions" className="btn-primary inline-flex items-center gap-2">
+                      <span>View All Promotions</span>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                      </svg>
+                    </Link>
+                  </div>
+                </div>
+              </section>
+            )}
     </>
   );
 }
