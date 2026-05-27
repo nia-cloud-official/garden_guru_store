@@ -97,7 +97,7 @@ export default async function ShopPage({
                 <ul className="space-y-2">
                   <li>
                     <Link
-                      href="/shop"
+                      href="/"
                       className={`block px-4 py-3 rounded-xl transition-all ${
                         activeCategory === ''
                           ? 'bg-primary text-white font-semibold'
