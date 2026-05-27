@@ -1,12 +1,21 @@
+import Image from 'next/image';
+
 export default function Footer() {
   return (
     <footer className="bg-gray-900 text-white py-12 mt-20">
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div>
-            <h3 className="text-2xl font-comic font-bold mb-4 flex items-center gap-2">
-              <span>🌿</span> The Garden Guru
-            </h3>
+            <div className="mb-4">
+              <Image 
+                src="/assets/logo.webp" 
+                alt="The Garden Guru" 
+                width={180}
+                height={80}
+                className="h-20 w-auto object-contain"
+                priority={false}
+              />
+            </div>
             <p className="text-gray-400">
               Hand-picked bouquets and garden plants, crafted with love.
             </p>

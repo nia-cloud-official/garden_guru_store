@@ -20,6 +20,22 @@ const nextConfig = {
         hostname: '**',
       },
     ],
+    formats: ['image/avif', 'image/webp'],
+    minimumCacheTTL: 60,
+  },
+  // Performance optimizations
+  swcMinify: true,
+  compress: true,
+  poweredByHeader: false,
+  reactStrictMode: true,
+  // Optimize production builds
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production',
+  },
+  // Enable experimental features for better performance
+  experimental: {
+    optimizeCss: true,
+    optimizePackageImports: ['lucide-react', 'react-hot-toast'],
   },
 };
 

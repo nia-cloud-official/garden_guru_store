@@ -1,13 +1,23 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Raleway, Comic_Neue } from 'next/font/google';
 import './globals.css';
 import { CartProvider } from '@/contexts/CartContext';
 import { Toaster } from 'react-hot-toast';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import Head from 'next/head';
 
-const inter = Inter({ subsets: ['latin'] });
+const raleway = Raleway({ 
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-raleway',
+});
+
+const comicNeue = Comic_Neue({ 
+  weight: ['400', '700'],
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-comic',
+});
 
 export const metadata: Metadata = {
   title: 'The Garden Guru - Fresh Flowers & Plants',
@@ -28,14 +38,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <Head>
-      <link
-          rel="stylesheet"
-          href="https://fonts.cdnfonts.com/css/comic-sans-ms"
-        />
-        </Head>
-      <body className={inter.className}>
+    <html lang="en" className={`${raleway.variable} ${comicNeue.variable}`}>
+      <body className={raleway.className}>
         <CartProvider>
           <Header />
           <main className="min-h-screen">
