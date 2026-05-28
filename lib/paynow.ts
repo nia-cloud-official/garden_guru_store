@@ -108,39 +108,102 @@ export async function initiatePaynow(
   phone: string,
   amount: number,
   cartItems: { product_name: string; quantity: number }[],
-  paymentMethod: PaynowPaymentMethod
+  paymentMethod: PaynowPaymentMethod,
+  requestId?: string
 ): Promise<PaynowInitiateResult> {
+  const logId = requestId || `paynow-${Date.now()}`;
   const config = getPaynowConfig();
+  
   if (!config) {
+    console.error(`[${logId}] Paynow configuration missing`);
     return { success: false, error: 'Paynow is not configured. Set PAYNOW_INTEGRATION_ID, PAYNOW_INTEGRATION_KEY, NEXT_PUBLIC_PAYNOW_RETURN_URL, and PAYNOW_RESULT_URL.' };
   }
+
+  console.log(`[${logId}] Building Paynow request fields`, {
+    orderId,
+    customerName,
+    customerEmail,
+    phone,
+    amount,
+    cartItemsCount: cartItems.length,
+    paymentMethod,
+    endpoint: config.endpoint,
+  });
 
   const fields = buildPaynowFields(orderId, customerName, customerEmail, phone, amount, cartItems, paymentMethod, config);
   fields.hash = signPaynowFields(fields, config.integrationKey);
 
   const body = new URLSearchParams(fields).toString();
+  
+  console.log(`[${logId}] Sending request to Paynow`, {
+    endpoint: config.endpoint,
+    bodyLength: body.length,
+    fieldsKeys: Object.keys(fields),
+  });
 
   try {
+    const requestStartTime = Date.now();
     const response = await fetch(config.endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body,
     });
+    const requestDuration = Date.now() - requestStartTime;
+
+    console.log(`[${logId}] Paynow response received (${requestDuration}ms)`, {
+      status: response.status,
+      statusText: response.statusText,
+      contentType: response.headers.get('content-type'),
+    });
 
     const text = await response.text();
+    
+    console.log(`[${logId}] Paynow response body (${text.length} bytes):`, {
+      rawResponse: text,
+      truncated: text.length > 500 ? text.substring(0, 500) + '...' : text,
+    });
+    
     const result = parsePaynowResponse(text);
+    
+    console.log(`[${logId}] Parsed Paynow response`, {
+      status: result.status,
+      hasError: !!result.error,
+      hasRedirect: !!result.browserurl,
+      hasPollUrl: !!result.pollurl,
+      hasTransaction: !!result.transaction,
+      parsedKeys: Object.keys(result),
+    });
 
     if (result.status?.toLowerCase() === 'ok') {
-      return {
+      const successResult = {
         success: true,
         redirectUrl: result.browserurl || undefined,
         pollUrl: result.pollurl || undefined,
         transactionId: result.transaction || result.reference || undefined,
       };
+      
+      console.log(`[${logId}] Paynow request successful`, {
+        transactionId: successResult.transactionId,
+        hasRedirectUrl: !!successResult.redirectUrl,
+      });
+      
+      return successResult;
     }
 
-    return { success: false, error: result.error || result.status || 'Unknown Paynow response' };
+    const errorMessage = result.error || result.status || 'Unknown Paynow response';
+    console.error(`[${logId}] Paynow request failed`, {
+      error: errorMessage,
+      status: result.status,
+      fullResponse: result,
+    });
+    
+    return { success: false, error: errorMessage };
   } catch (error: any) {
+    console.error(`[${logId}] Network error contacting Paynow`, {
+      message: error?.message,
+      name: error?.name,
+      code: error?.code,
+      stack: error?.stack,
+    });
     return { success: false, error: error?.message || 'Network error while contacting Paynow' };
   }
-}
