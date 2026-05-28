@@ -1,4 +1,3 @@
-import * as crypto from 'crypto';
 import { cleanPhone } from './utils';
 
 export type PaynowPaymentMethod = 'ecocash' | 'paynow';
@@ -44,52 +43,6 @@ export function isPaynowConfigured(): boolean {
   return getPaynowConfig() !== null;
 }
 
-export function buildPaynowFields(
-  orderId: string,
-  customerName: string,
-  customerEmail: string,
-  phone: string,
-  amount: number,
-  cartItems: { product_name: string; quantity: number }[],
-  paymentMethod: PaynowPaymentMethod,
-  config: PaynowConfig
-): Record<string, string> {
-  const normalizedPhone = cleanPhone(phone);
-  const itemList = cartItems.map((item) => `${item.product_name} x${item.quantity}`);
-  const additionalInfo = [customerName, ...itemList].join(' | ');
-  const method = paymentMethod === 'ecocash' ? 'ecocash' : 'paynow';
-
-  return {
-    id: config.integrationId,
-    reference: orderId,
-    amount: amount.toFixed(2),
-    additionalinfo: additionalInfo,
-    returnurl: `${config.returnUrl}?order_id=${encodeURIComponent(orderId)}`,
-    resulturl: config.resultUrl,
-    authemail: customerEmail,
-    phone: normalizedPhone,
-    method,
-    status: 'Message',
-  };
-}
-
-export function signPaynowFields(fields: Record<string, string>, integrationKey: string): string {
-  const hashInput = [
-    fields.id,
-    fields.reference,
-    fields.amount,
-    fields.additionalinfo,
-    fields.returnurl,
-    fields.resulturl,
-    fields.authemail,
-    fields.phone,
-    fields.method,
-    fields.status,
-  ].join('') + integrationKey;
-
-  return crypto.createHash('sha512').update(hashInput).digest('hex').toUpperCase();
-}
-
 export function parsePaynowResponse(responseText: string): Record<string, string> {
   const result: Record<string, string> = {};
   responseText.split('&').forEach((pair) => {
@@ -107,102 +60,93 @@ export async function initiatePaynow(
   customerEmail: string,
   phone: string,
   amount: number,
-  cartItems: { product_name: string; quantity: number }[],
+  cartItems: { product_name: string; quantity: number; product_price: number }[],
   paymentMethod: PaynowPaymentMethod,
   requestId?: string
 ): Promise<PaynowInitiateResult> {
   const logId = requestId || `paynow-${Date.now()}`;
   const config = getPaynowConfig();
-  
+
   if (!config) {
     console.error(`[${logId}] Paynow configuration missing`);
-    return { success: false, error: 'Paynow is not configured. Set PAYNOW_INTEGRATION_ID, PAYNOW_INTEGRATION_KEY, NEXT_PUBLIC_PAYNOW_RETURN_URL, and PAYNOW_RESULT_URL.' };
+    return {
+      success: false,
+      error:
+        'Paynow is not configured. Set PAYNOW_INTEGRATION_ID, PAYNOW_INTEGRATION_KEY, NEXT_PUBLIC_PAYNOW_RETURN_URL, and PAYNOW_RESULT_URL.',
+    };
   }
 
-  console.log(`[${logId}] Building Paynow request fields`, {
-    orderId,
-    customerName,
-    customerEmail,
-    phone,
-    amount,
-    cartItemsCount: cartItems.length,
-    paymentMethod,
-    endpoint: config.endpoint,
-  });
-
-  const fields = buildPaynowFields(orderId, customerName, customerEmail, phone, amount, cartItems, paymentMethod, config);
-  fields.hash = signPaynowFields(fields, config.integrationKey);
-
-  const body = new URLSearchParams(fields).toString();
-  
-  console.log(`[${logId}] Sending request to Paynow`, {
-    endpoint: config.endpoint,
-    bodyLength: body.length,
-    fieldsKeys: Object.keys(fields),
-  });
-
   try {
-    const requestStartTime = Date.now();
-    const response = await fetch(config.endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body,
-    });
-    const requestDuration = Date.now() - requestStartTime;
+    console.log(`[${logId}] Loading Paynow SDK`);
+    const paynowModule = await import('paynow');
+    const Paynow = paynowModule.Paynow || paynowModule.default?.Paynow || paynowModule.default;
 
-    console.log(`[${logId}] Paynow response received (${requestDuration}ms)`, {
-      status: response.status,
-      statusText: response.statusText,
-      contentType: response.headers.get('content-type'),
-    });
-
-    const text = await response.text();
-    
-    console.log(`[${logId}] Paynow response body (${text.length} bytes):`, {
-      rawResponse: text,
-      truncated: text.length > 500 ? text.substring(0, 500) + '...' : text,
-    });
-    
-    const result = parsePaynowResponse(text);
-    
-    console.log(`[${logId}] Parsed Paynow response`, {
-      status: result.status,
-      hasError: !!result.error,
-      hasRedirect: !!result.browserurl,
-      hasPollUrl: !!result.pollurl,
-      hasTransaction: !!result.transaction,
-      parsedKeys: Object.keys(result),
-    });
-
-    if (result.status?.toLowerCase() === 'ok') {
-      const successResult = {
-        success: true,
-        redirectUrl: result.browserurl || undefined,
-        pollUrl: result.pollurl || undefined,
-        transactionId: result.transaction || result.reference || undefined,
-      };
-      
-      console.log(`[${logId}] Paynow request successful`, {
-        transactionId: successResult.transactionId,
-        hasRedirectUrl: !!successResult.redirectUrl,
-      });
-      
-      return successResult;
+    if (!Paynow) {
+      throw new Error('Paynow SDK did not export Paynow class');
     }
 
-    const errorMessage = result.error || result.status || 'Unknown Paynow response';
-    console.error(`[${logId}] Paynow request failed`, {
-      error: errorMessage,
-      status: result.status,
-      fullResponse: result,
+    const paynow = new Paynow(config.integrationId, config.integrationKey);
+    paynow.resultUrl = config.resultUrl;
+    paynow.returnUrl = `${config.returnUrl}?order_id=${encodeURIComponent(orderId)}`;
+
+    console.log(`[${logId}] Creating Paynow payment object`, {
+      orderId,
+      customerEmail,
+      paymentMethod,
+      amount,
+      cartItemsCount: cartItems.length,
     });
-    
-    return { success: false, error: errorMessage };
+
+    const payment = paymentMethod === 'ecocash'
+      ? paynow.createPayment(orderId, customerEmail)
+      : paynow.createPayment(orderId);
+
+    cartItems.forEach((item) => {
+      payment.add(item.product_name, item.product_price);
+    });
+
+    const normalizedPhone = cleanPhone(phone);
+    const startTime = Date.now();
+    let response: any;
+
+    if (paymentMethod === 'paynow') {
+      console.log(`[${logId}] Sending Paynow web payment`);
+      response = await paynow.send(payment);
+    } else {
+      console.log(`[${logId}] Sending Paynow mobile payment`, {
+        phone: normalizedPhone,
+        method: 'ecocash',
+      });
+      response = await paynow.sendMobile(payment, normalizedPhone, 'ecocash');
+    }
+
+    const duration = Date.now() - startTime;
+    console.log(`[${logId}] Paynow SDK response (${duration}ms)`, {
+      success: response?.success,
+      error: response?.error,
+      redirectUrl: response?.redirectUrl,
+      pollUrl: response?.pollUrl,
+      transaction: response?.transaction,
+      reference: response?.reference,
+      instructions: response?.instructions,
+    });
+
+    if (!response?.success) {
+      const errorMessage = response?.error || 'Paynow checkout failed';
+      console.error(`[${logId}] Paynow initiation failed`, { errorMessage, response });
+      return { success: false, error: errorMessage };
+    }
+
+    return {
+      success: true,
+      redirectUrl: response?.redirectUrl || undefined,
+      pollUrl: response?.pollUrl || undefined,
+      transactionId: response?.transaction || response?.reference || undefined,
+    };
   } catch (error: any) {
-    console.error(`[${logId}] Network error contacting Paynow`, {
+    console.error(`[${logId}] Paynow integration error`, {
       message: error?.message,
       name: error?.name,
-      code: error?.code,
       stack: error?.stack,
     });
     return { success: false, error: error?.message || 'Network error while contacting Paynow' };
