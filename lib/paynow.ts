@@ -47,6 +47,7 @@ export function isPaynowConfigured(): boolean {
 export function buildPaynowFields(
   orderId: string,
   customerName: string,
+  customerEmail: string,
   phone: string,
   amount: number,
   cartItems: { product_name: string; quantity: number }[],
@@ -65,7 +66,7 @@ export function buildPaynowFields(
     additionalinfo: additionalInfo,
     returnurl: `${config.returnUrl}?order_id=${encodeURIComponent(orderId)}`,
     resulturl: config.resultUrl,
-    authemail: '',
+    authemail: customerEmail,
     phone: normalizedPhone,
     method,
     status: 'Message',
@@ -103,6 +104,7 @@ export function parsePaynowResponse(responseText: string): Record<string, string
 export async function initiatePaynow(
   orderId: string,
   customerName: string,
+  customerEmail: string,
   phone: string,
   amount: number,
   cartItems: { product_name: string; quantity: number }[],
@@ -113,7 +115,7 @@ export async function initiatePaynow(
     return { success: false, error: 'Paynow is not configured. Set PAYNOW_INTEGRATION_ID, PAYNOW_INTEGRATION_KEY, NEXT_PUBLIC_PAYNOW_RETURN_URL, and PAYNOW_RESULT_URL.' };
   }
 
-  const fields = buildPaynowFields(orderId, customerName, phone, amount, cartItems, paymentMethod, config);
+  const fields = buildPaynowFields(orderId, customerName, customerEmail, phone, amount, cartItems, paymentMethod, config);
   fields.hash = signPaynowFields(fields, config.integrationKey);
 
   const body = new URLSearchParams(fields).toString();

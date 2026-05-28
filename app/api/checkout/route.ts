@@ -18,6 +18,7 @@ interface CartItem {
 interface CheckoutRequest {
   firstName: string;
   lastName: string;
+  email: string;
   phone: string;
   paymentMethod: PaynowPaymentMethod;
   cart: CartItem[];
@@ -29,9 +30,9 @@ const validPaymentMethods: PaynowPaymentMethod[] = ['ecocash', 'paynow'];
 export async function POST(request: NextRequest) {
   try {
     const body: CheckoutRequest = await request.json();
-    const { firstName, lastName, phone, paymentMethod, cart, subtotal } = body;
+    const { firstName, lastName, email, phone, paymentMethod, cart, subtotal } = body;
 
-    if (!firstName || !lastName || !phone || !paymentMethod || !cart || cart.length === 0) {
+    if (!firstName || !lastName || !email || !phone || !paymentMethod || !cart || cart.length === 0) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
@@ -55,6 +56,7 @@ export async function POST(request: NextRequest) {
       order_number: orderId,
       first_name: firstName,
       last_name: lastName,
+      email,
       phone: phone,
       subtotal,
       total_amount: subtotal,
@@ -93,6 +95,7 @@ export async function POST(request: NextRequest) {
     const paynowResult = await initiatePaynow(
       orderId,
       `${firstName} ${lastName}`,
+      email,
       phone,
       subtotal,
       cart,

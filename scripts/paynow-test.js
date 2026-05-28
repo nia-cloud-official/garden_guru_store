@@ -26,7 +26,7 @@ function getEnvValue(key, env) {
   return process.env[key] || env[key] || '';
 }
 
-function buildFields({ integrationId, returnUrl, resultUrl, orderId, phone, amount, cartItems, paymentMethod }) {
+function buildFields({ integrationId, returnUrl, resultUrl, orderId, email, phone, amount, cartItems, paymentMethod }) {
   const normalizedPhone = phone.replace(/\s+/g, '');
   const additionalInfo = cartItems.map((item) => `${item.product_name} x${item.quantity}`).join(', ');
   const method = paymentMethod === 'ecocash' ? 'ecocash' : 'paynow';
@@ -38,7 +38,7 @@ function buildFields({ integrationId, returnUrl, resultUrl, orderId, phone, amou
     additionalinfo: additionalInfo,
     returnurl: `${returnUrl}?order_id=${encodeURIComponent(orderId)}`,
     resulturl: resultUrl,
-    authemail: '',
+    authemail: email,
     phone: normalizedPhone,
     method,
     status: 'Message',
@@ -102,6 +102,7 @@ async function runTest() {
     returnUrl,
     resultUrl,
     orderId,
+    email: 'test@example.com',
     phone: '0771234567',
     amount,
     cartItems,

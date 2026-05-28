@@ -19,6 +19,7 @@ export default function CheckoutPage() {
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
+    email: '',
     phone: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -57,6 +58,12 @@ export default function CheckoutPage() {
     if (!formData.lastName.trim()) {
       newErrors.lastName = 'Last name is required';
     }
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'Please enter a valid email address';
+    }
+
     if (!formData.phone.trim()) {
       newErrors.phone = 'Phone number is required';
     } else if (!validateZimbabwePhone(formData.phone)) {
@@ -93,6 +100,7 @@ export default function CheckoutPage() {
         body: JSON.stringify({
           firstName: formData.firstName.trim(),
           lastName: formData.lastName.trim(),
+          email: formData.email.trim(),
           phone: cleanPhone(formData.phone),
           paymentMethod: selectedPaymentMethod,
           cart: cartItems.map((item) => ({
@@ -139,6 +147,7 @@ export default function CheckoutPage() {
       const formDataToSend = new FormData();
       formDataToSend.append('firstName', formData.firstName.trim());
       formDataToSend.append('lastName', formData.lastName.trim());
+      formDataToSend.append('email', formData.email.trim());
       formDataToSend.append('phone', cleanPhone(formData.phone));
       formDataToSend.append('paymentMethod', 'bank');
       formDataToSend.append('proofOfPayment', proofOfPayment);
@@ -202,8 +211,8 @@ export default function CheckoutPage() {
                 <div className="bg-white rounded-3xl shadow-lg border border-gray-200 p-8">
                   <h3 className="text-3xl font-comic text-gray-900 mb-2">Your Details</h3>
                   <p className="text-gray-600 mb-8">
-                    No account needed. Just enter your name and phone number — we'll send a Paynow
-                    payment prompt to your phone.
+                    No account needed. Enter your name, email, and phone number — we'll send a Paynow
+                    payment prompt to your phone and confirmation to your email.
                   </p>
 
                   <form onSubmit={handleSubmit} className="space-y-6">
@@ -243,6 +252,22 @@ export default function CheckoutPage() {
                           <p className="mt-1 text-sm text-red-500">{errors.lastName}</p>
                         )}
                       </div>
+                    </div>
+
+                    <div>
+                      <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                        Email Address *
+                      </label>
+                      <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        className={`input-field ${errors.email ? 'border-red-500' : ''}`}
+                        placeholder="john@example.com"
+                      />
+                      {errors.email && <p className="mt-1 text-sm text-red-500">{errors.email}</p>}
                     </div>
 
                     <div>
