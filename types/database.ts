@@ -44,6 +44,50 @@ export interface Database {
           updated_at?: string
         }
       }
+      store_images: {
+        Row: {
+          id: number
+          name: string
+          slug: string
+          description: string | null
+          source_url: string | null
+          public_url: string
+          tags: Json
+          license: string | null
+          is_active: boolean
+          created_by_id: number | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          name: string
+          slug: string
+          description?: string | null
+          source_url?: string | null
+          public_url: string
+          tags?: Json
+          license?: string | null
+          is_active?: boolean
+          created_by_id?: number | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          name?: string
+          slug?: string
+          description?: string | null
+          source_url?: string | null
+          public_url?: string
+          tags?: Json
+          license?: string | null
+          is_active?: boolean
+          created_by_id?: number | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
       store_products: {
         Row: {
           id: number

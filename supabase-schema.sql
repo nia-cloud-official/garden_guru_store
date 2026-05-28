@@ -63,6 +63,22 @@ CREATE TABLE IF NOT EXISTS store_products (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Shared product image catalog for reliable internal image URLs
+CREATE TABLE IF NOT EXISTS store_images (
+  id BIGSERIAL PRIMARY KEY,
+  name VARCHAR(200) NOT NULL,
+  slug VARCHAR(200) UNIQUE NOT NULL,
+  description TEXT,
+  source_url VARCHAR(500),
+  public_url VARCHAR(500) NOT NULL,
+  tags JSONB DEFAULT '[]',
+  license VARCHAR(100),
+  is_active BOOLEAN DEFAULT TRUE,
+  created_by_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- Online Store Orders (separate from ERP sales_orders for public customers)
 CREATE TABLE IF NOT EXISTS store_orders (
   id BIGSERIAL PRIMARY KEY,
@@ -138,17 +154,19 @@ CREATE TABLE IF NOT EXISTS store_product_reviews (
 -- INDEXES FOR PERFORMANCE
 -- ============================================================================
 
-CREATE INDEX idx_store_products_category ON store_products(category_id);
-CREATE INDEX idx_store_products_plant ON store_products(plant_id);
-CREATE INDEX idx_store_products_active ON store_products(is_active);
-CREATE INDEX idx_store_products_featured ON store_products(is_featured);
-CREATE INDEX idx_store_products_slug ON store_products(slug);
-CREATE INDEX idx_store_orders_status ON store_orders(status);
-CREATE INDEX idx_store_orders_payment_status ON store_orders(payment_status);
-CREATE INDEX idx_store_orders_created_at ON store_orders(created_at DESC);
-CREATE INDEX idx_store_orders_customer ON store_orders(customer_id);
-CREATE INDEX idx_store_order_items_order ON store_order_items(order_id);
-CREATE INDEX idx_store_order_items_product ON store_order_items(product_id);
+CREATE INDEX IF NOT EXISTS idx_store_products_category ON store_products(category_id);
+CREATE INDEX IF NOT EXISTS idx_store_products_plant ON store_products(plant_id);
+CREATE INDEX IF NOT EXISTS idx_store_products_active ON store_products(is_active);
+CREATE INDEX IF NOT EXISTS idx_store_products_featured ON store_products(is_featured);
+CREATE INDEX IF NOT EXISTS idx_store_products_slug ON store_products(slug);
+CREATE INDEX IF NOT EXISTS idx_store_images_slug ON store_images(slug);
+CREATE INDEX IF NOT EXISTS idx_store_images_active ON store_images(is_active);
+CREATE INDEX IF NOT EXISTS idx_store_orders_status ON store_orders(status);
+CREATE INDEX IF NOT EXISTS idx_store_orders_payment_status ON store_orders(payment_status);
+CREATE INDEX IF NOT EXISTS idx_store_orders_created_at ON store_orders(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_store_orders_customer ON store_orders(customer_id);
+CREATE INDEX IF NOT EXISTS idx_store_order_items_order ON store_order_items(order_id);
+CREATE INDEX IF NOT EXISTS idx_store_order_items_product ON store_order_items(product_id);
 
 -- ============================================================================
 -- ROW LEVEL SECURITY (RLS) POLICIES
@@ -159,6 +177,7 @@ ALTER TABLE store_products ENABLE ROW LEVEL SECURITY;
 ALTER TABLE store_orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE store_order_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE store_product_reviews ENABLE ROW LEVEL SECURITY;
+ALTER TABLE store_images ENABLE ROW LEVEL SECURITY;
 
 -- Public can view active categories
 CREATE POLICY "Public can view active store categories" ON store_categories
@@ -188,6 +207,10 @@ CREATE POLICY "Anyone can view store order items" ON store_order_items
 CREATE POLICY "Public can view approved reviews" ON store_product_reviews
   FOR SELECT USING (is_approved = true);
 
+-- Public can view active store images
+CREATE POLICY "Public can view active store images" ON store_images
+  FOR SELECT USING (is_active = true);
+
 -- ============================================================================
 -- TRIGGERS
 -- ============================================================================
@@ -195,6 +218,11 @@ CREATE POLICY "Public can view approved reviews" ON store_product_reviews
 -- Update updated_at timestamp on store_products
 CREATE TRIGGER update_store_products_updated_at 
   BEFORE UPDATE ON store_products
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Update updated_at timestamp on store_images
+CREATE TRIGGER update_store_images_updated_at 
+  BEFORE UPDATE ON store_images
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Update updated_at timestamp on store_orders
