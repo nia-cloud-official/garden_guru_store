@@ -162,15 +162,17 @@ export async function POST(request: NextRequest) {
       console.log(`[${requestId}] Updating order with Paynow details`);
       try {
         const orderTable = supabase.from('store_orders') as any;
-        const { data: updatedOrder, error: updateError } = await orderTable
+        const { data: updatedOrderArray, error: updateError } = await orderTable
           .update(updatePayload)
           .eq('id', (orderData as any).id)
-          .select()
-          .single();
+          .select();
 
         if (updateError) {
           console.error(`[${requestId}] Error updating order with Paynow details:`, updateError);
+        } else if (!updatedOrderArray || (Array.isArray(updatedOrderArray) && updatedOrderArray.length === 0)) {
+          console.warn(`[${requestId}] Update completed but returned 0 rows (possible RLS or no-match)`);
         } else {
+          const updatedOrder = Array.isArray(updatedOrderArray) ? updatedOrderArray[0] : updatedOrderArray;
           console.log(`[${requestId}] Order updated with Paynow details`, { updatedOrderId: (updatedOrder as any)?.id });
         }
       } catch (err) {
