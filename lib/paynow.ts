@@ -1,3 +1,4 @@
+import { Paynow } from 'paynow';
 import { cleanPhone } from './utils';
 
 export type PaynowPaymentMethod = 'ecocash' | 'paynow';
@@ -10,37 +11,67 @@ export interface PaynowInitiateResult {
   error?: string;
 }
 
-export interface PaynowConfig {
-  integrationId: string;
-  integrationKey: string;
-  returnUrl: string;
-  resultUrl: string;
-  endpoint: string;
-}
+// Singleton instance
+let paynowInstance: Paynow | null = null;
 
-export function getPaynowConfig(): PaynowConfig | null {
-  const integrationId = process.env.PAYNOW_INTEGRATION_ID?.trim() || '';
-  const integrationKey = process.env.PAYNOW_INTEGRATION_KEY?.trim() || '';
-  const returnUrl = process.env.NEXT_PUBLIC_PAYNOW_RETURN_URL?.trim() || '';
-  const resultUrl = process.env.PAYNOW_RESULT_URL?.trim() || '';
-  const endpoint = process.env.PAYNOW_ENDPOINT?.trim() || 'https://www.paynow.co.zw/interface/remotetransaction';
+export function getPaynow() {
+  if (paynowInstance) return paynowInstance;
 
-  if (
-    !integrationId ||
-    integrationId === 'YOUR_INTEGRATION_ID' ||
-    !integrationKey ||
-    integrationKey === 'YOUR_INTEGRATION_KEY' ||
-    !returnUrl ||
-    !resultUrl
-  ) {
-    return null;
+  const PAYNOW_ID = process.env.PAYNOW_INTEGRATION_ID || '';
+  const PAYNOW_KEY = process.env.PAYNOW_INTEGRATION_KEY || '';
+
+  if (!process.env.PAYNOW_INTEGRATION_ID && process.env.NODE_ENV !== 'production') {
+    console.warn('PAYNOW_INTEGRATION_ID is missing. Payments will fail if not using a mock.');
   }
 
-  return { integrationId, integrationKey, returnUrl, resultUrl, endpoint };
+  paynowInstance = new Paynow(PAYNOW_ID, PAYNOW_KEY);
+
+  const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001';
+  paynowInstance.resultUrl = process.env.PAYNOW_RESULT_URL || `${APP_URL}/api/paynow/result`;
+  paynowInstance.returnUrl = process.env.NEXT_PUBLIC_PAYNOW_RETURN_URL || `${APP_URL}/checkout/confirmation`;
+
+  return paynowInstance;
 }
 
-export function isPaynowConfigured(): boolean {
-  return getPaynowConfig() !== null;
+export async function createPaynowPayment(
+  reference: string,
+  authEmail: string,
+  amount: number,
+  returnUrlOverride?: string
+) {
+  console.log('Paynow ID Present:', !!process.env.PAYNOW_INTEGRATION_ID);
+  console.log('Paynow Key Present:', !!process.env.PAYNOW_INTEGRATION_KEY);
+
+  const paynow = getPaynow();
+  const payment = paynow.createPayment(reference, authEmail);
+  payment.add('Order', amount);
+
+  if (returnUrlOverride) {
+    paynow.returnUrl = returnUrlOverride;
+  }
+
+  console.log('Initiating Paynow payment for:', reference, 'Amount:', amount);
+
+  try {
+    const response = await paynow.send(payment);
+    console.log('Paynow Response:', response);
+    return response;
+  } catch (error) {
+    console.error('Paynow Error Details:', error);
+    throw error;
+  }
+}
+
+export async function checkPaymentStatus(pollUrl: string) {
+  try {
+    const paynow = getPaynow();
+    const status = await paynow.pollTransaction(pollUrl);
+    return status;
+  } catch (error) {
+    console.error('Paynow Poll Error:', error);
+    throw error;
+  }
+
 }
 
 export function parsePaynowResponse(responseText: string): Record<string, string> {
@@ -54,6 +85,10 @@ export function parsePaynowResponse(responseText: string): Record<string, string
   return result;
 }
 
+export function isPaynowConfigured(): boolean {
+  return !!process.env.PAYNOW_INTEGRATION_ID && !!process.env.PAYNOW_INTEGRATION_KEY && !!(process.env.NEXT_PUBLIC_PAYNOW_RETURN_URL || process.env.PAYNOW_RESULT_URL);
+}
+
 export async function initiatePaynow(
   orderId: string,
   customerName: string,
@@ -65,76 +100,37 @@ export async function initiatePaynow(
   requestId?: string
 ): Promise<PaynowInitiateResult> {
   const logId = requestId || `paynow-${Date.now()}`;
-  const config = getPaynowConfig();
 
-  if (!config) {
+  if (!isPaynowConfigured()) {
     console.error(`[${logId}] Paynow configuration missing`);
-    return {
-      success: false,
-      error:
-        'Paynow is not configured. Set PAYNOW_INTEGRATION_ID, PAYNOW_INTEGRATION_KEY, NEXT_PUBLIC_PAYNOW_RETURN_URL, and PAYNOW_RESULT_URL.',
-    };
+    return { success: false, error: 'Paynow is not configured.' };
   }
 
   try {
-    console.log(`[${logId}] Loading Paynow SDK`);
-    const paynowModule = await import('paynow');
-    const Paynow = paynowModule.Paynow || paynowModule.default?.Paynow || paynowModule.default;
-
-    if (!Paynow) {
-      throw new Error('Paynow SDK did not export Paynow class');
-    }
-
-    const paynow = new Paynow(config.integrationId, config.integrationKey);
-    paynow.resultUrl = config.resultUrl;
-    paynow.returnUrl = `${config.returnUrl}?order_id=${encodeURIComponent(orderId)}`;
-
-    console.log(`[${logId}] Creating Paynow payment object`, {
-      orderId,
-      customerEmail,
-      paymentMethod,
-      amount,
-      cartItemsCount: cartItems.length,
-    });
-
-    const payment = paymentMethod === 'ecocash'
-      ? paynow.createPayment(orderId, customerEmail)
-      : paynow.createPayment(orderId);
+    const paynow = getPaynow();
+    // Create payment; include customer email if available
+    const payment = paymentMethod === 'ecocash' ? paynow.createPayment(orderId, customerEmail) : paynow.createPayment(orderId, customerEmail);
 
     cartItems.forEach((item) => {
+      // Add each item's unit price (Paynow expects label + amount)
       payment.add(item.product_name, item.product_price);
     });
 
-    const normalizedPhone = cleanPhone(phone);
-    const startTime = Date.now();
+    const normalizedPhone = cleanPhone(phone || '');
     let response: any;
 
     if (paymentMethod === 'paynow') {
       console.log(`[${logId}] Sending Paynow web payment`);
       response = await paynow.send(payment);
     } else {
-      console.log(`[${logId}] Sending Paynow mobile payment`, {
-        phone: normalizedPhone,
-        method: 'ecocash',
-      });
+      console.log(`[${logId}] Sending Paynow mobile payment`);
       response = await paynow.sendMobile(payment, normalizedPhone, 'ecocash');
     }
 
-    const duration = Date.now() - startTime;
-    console.log(`[${logId}] Paynow SDK response (${duration}ms)`, {
-      success: response?.success,
-      error: response?.error,
-      redirectUrl: response?.redirectUrl,
-      pollUrl: response?.pollUrl,
-      transaction: response?.transaction,
-      reference: response?.reference,
-      instructions: response?.instructions,
-    });
+    console.log(`[${logId}] Paynow response:`, response);
 
     if (!response?.success) {
-      const errorMessage = response?.error || 'Paynow checkout failed';
-      console.error(`[${logId}] Paynow initiation failed`, { errorMessage, response });
-      return { success: false, error: errorMessage };
+      return { success: false, error: response?.error || 'Paynow initiation failed' };
     }
 
     return {
@@ -143,12 +139,8 @@ export async function initiatePaynow(
       pollUrl: response?.pollUrl || undefined,
       transactionId: response?.transaction || response?.reference || undefined,
     };
-  } catch (error: any) {
-    console.error(`[${logId}] Paynow integration error`, {
-      message: error?.message,
-      name: error?.name,
-      stack: error?.stack,
-    });
-    return { success: false, error: error?.message || 'Network error while contacting Paynow' };
+  } catch (err: any) {
+    console.error(`[${logId}] initiatePaynow error:`, err);
+    return { success: false, error: err?.message || 'Paynow error' };
   }
 }
