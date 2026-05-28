@@ -160,9 +160,22 @@ export async function POST(request: NextRequest) {
 
     if (Object.keys(updatePayload).length > 0) {
       console.log(`[${requestId}] Updating order with Paynow details`);
-      const orderTable = supabase.from('store_orders') as any;
-      await orderTable.update(updatePayload).eq('id', (orderData as any).id);
-      console.log(`[${requestId}] Order updated with Paynow details`);
+      try {
+        const orderTable = supabase.from('store_orders') as any;
+        const { data: updatedOrder, error: updateError } = await orderTable
+          .update(updatePayload)
+          .eq('id', (orderData as any).id)
+          .select()
+          .single();
+
+        if (updateError) {
+          console.error(`[${requestId}] Error updating order with Paynow details:`, updateError);
+        } else {
+          console.log(`[${requestId}] Order updated with Paynow details`, { updatedOrderId: (updatedOrder as any)?.id });
+        }
+      } catch (err) {
+        console.error(`[${requestId}] Exception while updating order with Paynow details:`, err);
+      }
     }
 
     const totalDuration = Date.now() - checkoutStartTime;
@@ -171,11 +184,18 @@ export async function POST(request: NextRequest) {
       hasRedirectUrl: !!paynowResult.redirectUrl,
     });
 
-    return NextResponse.json({
+    const responsePayload = {
       success: true,
       order_id: orderId,
       redirect_url: paynowResult.redirectUrl,
-    });
+    };
+
+    try {
+      return NextResponse.json(responsePayload);
+    } catch (err) {
+      console.error(`[${requestId}] Failed to return checkout response:`, err);
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    }
   } catch (error: any) {
     const totalDuration = Date.now() - checkoutStartTime;
     console.error(`[${requestId}] Checkout error (${totalDuration}ms):`, {
