@@ -183,22 +183,46 @@ export async function POST(request: NextRequest) {
       hasPollUrl: !!paynowResult.pollUrl,
     });
 
-    // Build and return response
-    const responsePayload: any = {
+    // Build and return response - ensure all values are serializable
+    let responsePayload: any = {
       success: true,
-      order_id: orderId,
+      order_id: String(orderId),
     };
 
-    if (paynowResult.pollUrl) {
-      responsePayload.poll_url = paynowResult.pollUrl;
+    // Safely add optional fields
+    try {
+      if (paynowResult.pollUrl) {
+        const pollUrl = String(paynowResult.pollUrl);
+        if (pollUrl && pollUrl !== 'undefined' && pollUrl !== 'null') {
+          responsePayload.poll_url = pollUrl;
+        }
+      }
+    } catch (e) {
+      console.warn(`[${requestId}] Could not extract poll_url:`, e);
     }
 
-    if (paynowResult.redirectUrl) {
-      responsePayload.redirect_url = paynowResult.redirectUrl;
+    try {
+      if (paynowResult.redirectUrl) {
+        const redirectUrl = String(paynowResult.redirectUrl);
+        if (redirectUrl && redirectUrl !== 'undefined' && redirectUrl !== 'null') {
+          responsePayload.redirect_url = redirectUrl;
+        }
+      }
+    } catch (e) {
+      console.warn(`[${requestId}] Could not extract redirect_url:`, e);
     }
 
-    console.log(`[${requestId}] Returning checkout response:`, responsePayload);
-    return NextResponse.json(responsePayload, { status: 200 });
+    console.log(`[${requestId}] Final response payload:`, {
+      success: responsePayload.success,
+      order_id: responsePayload.order_id,
+      poll_url: responsePayload.poll_url ? 'present' : 'absent',
+      redirect_url: responsePayload.redirect_url ? 'present' : 'absent',
+    });
+
+    // Ensure clean object before serialization
+    const cleanPayload = JSON.parse(JSON.stringify(responsePayload));
+    
+    return NextResponse.json(cleanPayload, { status: 200 });
   } catch (error: any) {
     const totalDuration = Date.now() - checkoutStartTime;
     console.error(`[${requestId}] Checkout error (${totalDuration}ms):`, {
