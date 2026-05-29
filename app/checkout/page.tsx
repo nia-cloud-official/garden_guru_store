@@ -119,15 +119,19 @@ export default function CheckoutPage() {
         throw new Error(data.error || 'Checkout failed');
       }
 
-      if (data.redirect_url) {
-        if (typeof window !== 'undefined') {
-          window.location.href = data.redirect_url;
-          return;
-        }
+      clearCart();
+
+      if (data.poll_url) {
+        router.push(`/confirmation?order_id=${data.order_id}&poll_url=${encodeURIComponent(data.poll_url)}`);
+        return;
       }
 
-      clearCart();
-      router.push(`/confirmation?order_id=${data.order_id}&demo=1`);
+      if (data.redirect_url && typeof window !== 'undefined') {
+        window.location.href = data.redirect_url;
+        return;
+      }
+
+      router.push(`/confirmation?order_id=${data.order_id}`);
     } catch (error: any) {
       toast.error(error.message || 'Something went wrong');
       setLoading(false);

@@ -118,14 +118,10 @@ export async function initiatePaynow(
 
     const normalizedPhone = cleanPhone(phone || '');
     let response: any;
+    const mobileService = paymentMethod === 'ecocash' ? 'ecocash' : 'paynow';
 
-    if (paymentMethod === 'paynow') {
-      console.log(`[${logId}] Sending Paynow web payment`);
-      response = await paynow.send(payment);
-    } else {
-      console.log(`[${logId}] Sending Paynow mobile payment`);
-      response = await paynow.sendMobile(payment, normalizedPhone, 'ecocash');
-    }
+    console.log(`[${logId}] Sending Paynow mobile payment via ${mobileService}`);
+    response = await paynow.sendMobile(payment, normalizedPhone, mobileService);
 
     console.log(`[${logId}] Paynow response:`, response);
 

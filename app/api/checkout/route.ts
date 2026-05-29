@@ -186,11 +186,16 @@ export async function POST(request: NextRequest) {
       hasRedirectUrl: !!paynowResult.redirectUrl,
     });
 
-    const responsePayload = {
+    const responsePayload: any = {
       success: true,
       order_id: orderId,
-      redirect_url: paynowResult.redirectUrl,
     };
+
+    if (paynowResult.pollUrl) {
+      responsePayload.poll_url = paynowResult.pollUrl;
+    } else if (paynowResult.redirectUrl) {
+      responsePayload.redirect_url = paynowResult.redirectUrl;
+    }
 
     try {
       return NextResponse.json(responsePayload);
