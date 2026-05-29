@@ -123,31 +123,22 @@ export async function initiatePaynow(
     console.log(`[${logId}] Sending Paynow mobile payment via ${mobileService}`);
     response = await paynow.sendMobile(payment, normalizedPhone, mobileService);
 
-    console.log(`[${logId}] Paynow response success:`, response?.success);
-    console.log(`[${logId}] Paynow response has pollUrl:`, !!response?.pollUrl);
-    console.log(`[${logId}] Paynow response has transaction:`, !!response?.transaction);
+    console.log(`[${logId}] Paynow sendMobile response:`, {
+      success: response?.success,
+      hasPollUrl: !!response?.pollUrl,
+      hasTransaction: !!response?.transaction,
+    });
 
     if (!response?.success) {
       return { success: false, error: response?.error || 'Paynow initiation failed' };
     }
 
-    // Extract only plain string/number values to avoid serialization issues
-    const extractedResult: PaynowInitiateResult = {
+    return {
       success: true,
-      redirectUrl: typeof response?.redirectUrl === 'string' ? response.redirectUrl : undefined,
-      pollUrl: typeof response?.pollUrl === 'string' ? response.pollUrl : undefined,
-      transactionId: typeof response?.transaction === 'string' ? response.transaction : 
-                     typeof response?.reference === 'string' ? response.reference : undefined,
+      redirectUrl: response?.redirectUrl,
+      pollUrl: response?.pollUrl,
+      transactionId: response?.transaction || response?.reference,
     };
-
-    console.log(`[${logId}] Extracted result:`, {
-      success: extractedResult.success,
-      hasRedirectUrl: !!extractedResult.redirectUrl,
-      hasPollUrl: !!extractedResult.pollUrl,
-      hasTransactionId: !!extractedResult.transactionId,
-    });
-
-    return extractedResult;
   } catch (err: any) {
     console.error(`[${logId}] initiatePaynow error:`, err);
     return { success: false, error: err?.message || 'Paynow error' };

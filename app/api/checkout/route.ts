@@ -149,80 +149,20 @@ export async function POST(request: NextRequest) {
     }
     
     console.log(`[${requestId}] Paynow payment initiated successfully (${paynowDuration}ms):`, {
-      redirectUrl: paynowResult.redirectUrl ? 'present' : 'missing',
-      pollUrl: paynowResult.pollUrl ? 'present' : 'missing',
-      transactionId: paynowResult.transactionId,
+      pollUrl: paynowResult.pollUrl ? 'present' : 'absent',
     });
-
-    // Update order with PayNow details if available
-    if (paynowResult.pollUrl || paynowResult.transactionId) {
-      console.log(`[${requestId}] Updating order with Paynow details`);
-      try {
-        const updatePayload: OrderUpdate = {};
-        if (paynowResult.pollUrl) updatePayload.paynow_poll_url = paynowResult.pollUrl;
-        if (paynowResult.transactionId) updatePayload.paynow_reference = paynowResult.transactionId;
-
-        const { error: updateError } = await supabase
-          .from('store_orders')
-          .update(updatePayload)
-          .eq('id', (orderData as any).id);
-
-        if (updateError) {
-          console.error(`[${requestId}] Error updating order with Paynow details:`, updateError);
-        } else {
-          console.log(`[${requestId}] Order updated with Paynow details successfully`);
-        }
-      } catch (err) {
-        console.error(`[${requestId}] Exception while updating order with Paynow details:`, err);
-      }
-    }
 
     const totalDuration = Date.now() - checkoutStartTime;
-    console.log(`[${requestId}] Checkout completed successfully (total: ${totalDuration}ms)`, {
-      orderId,
-      hasPollUrl: !!paynowResult.pollUrl,
-    });
+    console.log(`[${requestId}] Checkout completed successfully (total: ${totalDuration}ms)`);
 
-    // Build and return response - ensure all values are serializable
-    let responsePayload: any = {
+    const responsePayload = {
       success: true,
-      order_id: String(orderId),
+      order_id: orderId,
+      ...(paynowResult.pollUrl && { poll_url: paynowResult.pollUrl }),
+      ...(paynowResult.redirectUrl && { redirect_url: paynowResult.redirectUrl }),
     };
 
-    // Safely add optional fields
-    try {
-      if (paynowResult.pollUrl) {
-        const pollUrl = String(paynowResult.pollUrl);
-        if (pollUrl && pollUrl !== 'undefined' && pollUrl !== 'null') {
-          responsePayload.poll_url = pollUrl;
-        }
-      }
-    } catch (e) {
-      console.warn(`[${requestId}] Could not extract poll_url:`, e);
-    }
-
-    try {
-      if (paynowResult.redirectUrl) {
-        const redirectUrl = String(paynowResult.redirectUrl);
-        if (redirectUrl && redirectUrl !== 'undefined' && redirectUrl !== 'null') {
-          responsePayload.redirect_url = redirectUrl;
-        }
-      }
-    } catch (e) {
-      console.warn(`[${requestId}] Could not extract redirect_url:`, e);
-    }
-
-    console.log(`[${requestId}] Final response payload:`, {
-      success: responsePayload.success,
-      order_id: responsePayload.order_id,
-      poll_url: responsePayload.poll_url ? 'present' : 'absent',
-      redirect_url: responsePayload.redirect_url ? 'present' : 'absent',
-    });
-
-    // Ensure clean object before serialization
-    const cleanPayload = JSON.parse(JSON.stringify(responsePayload));
-    
-    return NextResponse.json(cleanPayload, { status: 200 });
+    return NextResponse.json(responsePayload);
   } catch (error: any) {
     const totalDuration = Date.now() - checkoutStartTime;
     console.error(`[${requestId}] Checkout error (${totalDuration}ms):`, {
