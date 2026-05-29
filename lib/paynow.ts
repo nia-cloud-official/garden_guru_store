@@ -108,23 +108,18 @@ export async function initiatePaynow(
 
   try {
     const paynow = getPaynow();
-    // Create payment; include customer email if available
-    const payment = paymentMethod === 'ecocash' ? paynow.createPayment(orderId, customerEmail) : paynow.createPayment(orderId, customerEmail);
+    const payment = paynow.createPayment(orderId, customerEmail);
 
-    cartItems.forEach((item) => {
-      // Add each item's unit price (Paynow expects label + amount)
-      payment.add(item.product_name, item.product_price);
-    });
+    // Add the total amount as a single line item
+    payment.add('Order Total', amount);
 
     const normalizedPhone = cleanPhone(phone || '');
     let response: any;
     
-    // PayNow sendMobile only supports 'ecocash' as the service parameter
-    // For 'paynow' payment method, use the regular send() method which returns a redirect URL
-    console.log(`[${logId}] Payment method: ${paymentMethod}`);
+    console.log(`[${logId}] Payment method: ${paymentMethod}, Amount: ${amount}`);
     
     if (paymentMethod === 'ecocash') {
-      console.log(`[${logId}] Sending via sendMobile (ecocash)`);
+      console.log(`[${logId}] Sending via sendMobile (ecocash) to ${normalizedPhone}`);
       response = await paynow.sendMobile(payment, normalizedPhone, 'ecocash');
     } else if (paymentMethod === 'paynow') {
       console.log(`[${logId}] Sending via regular send() for Paynow web checkout`);
@@ -134,46 +129,26 @@ export async function initiatePaynow(
       return { success: false, error: `Unsupported payment method: ${paymentMethod}` };
     }
 
-    console.log(`[${logId}] DEBUG - Raw Paynow response:`, response);
-    console.log(`[${logId}] DEBUG - Response type:`, typeof response);
-    console.log(`[${logId}] DEBUG - Response keys:`, Object.keys(response || {}));
-    console.log(`[${logId}] DEBUG - Response properties:`, {
-      success: response?.success,
-      successType: typeof response?.success,
-      pollUrl: response?.pollUrl,
-      pollUrlType: typeof response?.pollUrl,
-      redirectUrl: response?.redirectUrl,
-      redirectUrlType: typeof response?.redirectUrl,
-      transaction: response?.transaction,
-      transactionType: typeof response?.transaction,
-      reference: response?.reference,
-      referenceType: typeof response?.reference,
-      error: response?.error,
-      errorType: typeof response?.error,
-    });
+    console.log(`[${logId}] Paynow response:`, JSON.stringify(response, null, 2));
 
-    if (!response?.success) {
-      console.error(`[${logId}] Paynow returned success=false`, { error: response?.error });
-      return { success: false, error: response?.error || 'Paynow initiation failed' };
+    if (!response || typeof response.success === 'undefined') {
+      console.error(`[${logId}] Invalid Paynow response`);
+      return { success: false, error: 'Invalid response from Paynow' };
+    }
+
+    if (!response.success) {
+      console.error(`[${logId}] Paynow returned success=false`, { error: response.error });
+      return { success: false, error: response.error || 'Paynow initiation failed' };
     }
 
     const result: PaynowInitiateResult = {
       success: true,
-      redirectUrl: response?.redirectUrl,
-      pollUrl: response?.pollUrl,
-      transactionId: response?.transaction || response?.reference,
+      redirectUrl: response.redirectUrl,
+      pollUrl: response.pollUrl,
+      transactionId: response.transaction || response.reference,
     };
 
-    console.log(`[${logId}] DEBUG - Final result object:`, {
-      success: result.success,
-      redirectUrl: result.redirectUrl,
-      redirectUrlType: typeof result.redirectUrl,
-      pollUrl: result.pollUrl,
-      pollUrlType: typeof result.pollUrl,
-      transactionId: result.transactionId,
-      transactionIdType: typeof result.transactionId,
-    });
-
+    console.log(`[${logId}] Success:`, result);
     return result;
   } catch (err: any) {
     console.error(`[${logId}] initiatePaynow error:`, err);

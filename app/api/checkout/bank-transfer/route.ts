@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { generateOrderId } from '@/lib/utils';
-import { sendEmail, generateSimpleBankTransferEmail } from '@/lib/email';
 import type { Database } from '@/types/database';
 
 type OrderInsert = Database['public']['Tables']['store_orders']['Insert'];
@@ -14,7 +13,6 @@ interface CartItem {
   quantity: number;
 }
 
-const SALES_ADMIN_EMAIL = 'tggsalesadministration@gmail.com';
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 export async function POST(request: NextRequest) {
@@ -124,30 +122,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to create order items' }, { status: 500 });
     }
 
-    // Send email to admin
-    const customerName = `${firstName} ${lastName}`;
-    const emailItems = cart.map((item) => ({
-      name: item.product_name,
-      quantity: item.quantity,
-      price: item.product_price,
-    }));
-
-    console.log(`[${requestId}] Sending email to ${SALES_ADMIN_EMAIL}`);
-    await sendEmail({
-      to: SALES_ADMIN_EMAIL,
-      subject: `🏦 New Bank Transfer Order #${orderId}`,
-      html: generateSimpleBankTransferEmail(
-        orderId,
-        customerName,
-        email,
-        phone,
-        emailItems,
-        subtotal,
-        proofOfPaymentUrl
-      ),
-    });
-
-    console.log(`[${requestId}] Complete`);
+    console.log(`[${requestId}] Complete - Order: ${orderId}`);
+    console.log(`[${requestId}] Customer: ${firstName} ${lastName}, ${email}, ${phone}`);
+    console.log(`[${requestId}] Proof of payment: ${proofOfPaymentUrl}`);
 
     return NextResponse.json({
       success: true,
@@ -158,3 +135,4 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Something went wrong' }, { status: 500 });
   }
 }
+
