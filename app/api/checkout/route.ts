@@ -154,26 +154,23 @@ export async function POST(request: NextRequest) {
       transactionId: paynowResult.transactionId,
     });
 
-    const updatePayload: OrderUpdate = {};
-    if (paynowResult.pollUrl) updatePayload.paynow_poll_url = paynowResult.pollUrl;
-    if (paynowResult.transactionId) updatePayload.paynow_reference = paynowResult.transactionId;
-
-    if (Object.keys(updatePayload).length > 0) {
+    // Update order with PayNow details if available
+    if (paynowResult.pollUrl || paynowResult.transactionId) {
       console.log(`[${requestId}] Updating order with Paynow details`);
       try {
-        const orderTable = supabase.from('store_orders') as any;
-        const { data: updatedOrderArray, error: updateError } = await orderTable
+        const updatePayload: OrderUpdate = {};
+        if (paynowResult.pollUrl) updatePayload.paynow_poll_url = paynowResult.pollUrl;
+        if (paynowResult.transactionId) updatePayload.paynow_reference = paynowResult.transactionId;
+
+        const { error: updateError } = await supabase
+          .from('store_orders')
           .update(updatePayload)
-          .eq('id', (orderData as any).id)
-          .select();
+          .eq('id', (orderData as any).id);
 
         if (updateError) {
           console.error(`[${requestId}] Error updating order with Paynow details:`, updateError);
-        } else if (!updatedOrderArray || (Array.isArray(updatedOrderArray) && updatedOrderArray.length === 0)) {
-          console.warn(`[${requestId}] Update completed but returned 0 rows (possible RLS or no-match)`);
         } else {
-          const updatedOrder = Array.isArray(updatedOrderArray) ? updatedOrderArray[0] : updatedOrderArray;
-          console.log(`[${requestId}] Order updated with Paynow details`, { updatedOrderId: (updatedOrder as any)?.id });
+          console.log(`[${requestId}] Order updated with Paynow details successfully`);
         }
       } catch (err) {
         console.error(`[${requestId}] Exception while updating order with Paynow details:`, err);
@@ -183,9 +180,10 @@ export async function POST(request: NextRequest) {
     const totalDuration = Date.now() - checkoutStartTime;
     console.log(`[${requestId}] Checkout completed successfully (total: ${totalDuration}ms)`, {
       orderId,
-      hasRedirectUrl: !!paynowResult.redirectUrl,
+      hasPollUrl: !!paynowResult.pollUrl,
     });
 
+    // Build and return response
     const responsePayload: any = {
       success: true,
       order_id: orderId,
@@ -193,16 +191,14 @@ export async function POST(request: NextRequest) {
 
     if (paynowResult.pollUrl) {
       responsePayload.poll_url = paynowResult.pollUrl;
-    } else if (paynowResult.redirectUrl) {
+    }
+
+    if (paynowResult.redirectUrl) {
       responsePayload.redirect_url = paynowResult.redirectUrl;
     }
 
-    try {
-      return NextResponse.json(responsePayload);
-    } catch (err) {
-      console.error(`[${requestId}] Failed to return checkout response:`, err);
-      return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-    }
+    console.log(`[${requestId}] Returning checkout response:`, responsePayload);
+    return NextResponse.json(responsePayload, { status: 200 });
   } catch (error: any) {
     const totalDuration = Date.now() - checkoutStartTime;
     console.error(`[${requestId}] Checkout error (${totalDuration}ms):`, {
