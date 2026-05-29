@@ -339,64 +339,27 @@ export default function CheckoutPage() {
                       <label className="block text-sm font-medium text-gray-700 mb-4">
                         Select Payment Method *
                       </label>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        {/* EcoCash */}
+                      <div className="grid grid-cols-2 gap-4">
+                        {/* EcoCash - Mobile Payment */}
                         <button
                           type="button"
                           onClick={() => setSelectedPaymentMethod('ecocash')}
-                          className={`p-4 border-2 rounded-xl transition-all hover:shadow-lg ${
+                          className={`p-6 border-2 rounded-xl transition-all hover:shadow-lg ${
                             selectedPaymentMethod === 'ecocash'
                               ? 'border-[#00b050] bg-[#00b050]/5'
                               : 'border-gray-200 hover:border-[#00b050]/50'
                           }`}
                         >
-                          <div className="flex flex-col items-center gap-2">
+                          <div className="flex flex-col items-center gap-3">
                             <img 
                               src="https://ecocash.co.zw/storage/2025/07/EcoCash_logo.png" 
                               alt="EcoCash"
-                              className="w-16 h-16 object-contain"
+                              className="w-20 h-20 object-contain"
                             />
-                            <span className="text-sm font-medium text-gray-700">EcoCash</span>
-                          </div>
-                        </button>
-
-                        {/* Paynow */}
-                        <button
-                          type="button"
-                          onClick={() => setSelectedPaymentMethod('paynow')}
-                          className={`p-4 border-2 rounded-xl transition-all hover:shadow-lg ${
-                            selectedPaymentMethod === 'paynow'
-                              ? 'border-[#00b050] bg-[#00b050]/5'
-                              : 'border-gray-200 hover:border-[#00b050]/50'
-                          }`}
-                        >
-                          <div className="flex flex-col items-center gap-2">
-                            <img 
-                              src="https://www.paynow.co.zw/Content/landing/images/paynow-logo-blue.svg" 
-                              alt="Paynow"
-                              className="w-16 h-16 object-contain"
-                            />
-                            <span className="text-sm font-medium text-gray-700">Paynow</span>
-                          </div>
-                        </button>
-
-                        {/* Stripe */}
-                        <button
-                          type="button"
-                          onClick={() => setSelectedPaymentMethod('stripe')}
-                          className={`p-4 border-2 rounded-xl transition-all hover:shadow-lg ${
-                            selectedPaymentMethod === 'stripe'
-                              ? 'border-[#00b050] bg-[#00b050]/5'
-                              : 'border-gray-200 hover:border-[#00b050]/50'
-                          }`}
-                        >
-                          <div className="flex flex-col items-center gap-2">
-                            <img 
-                              src="https://upload.wikimedia.org/wikipedia/commons/b/ba/Stripe_Logo%2C_revised_2016.svg" 
-                              alt="Stripe"
-                              className="w-16 h-16 object-contain"
-                            />
-                            <span className="text-sm font-medium text-gray-700">Stripe</span>
+                            <div className="text-center">
+                              <span className="text-base font-semibold text-gray-900 block">EcoCash</span>
+                              <span className="text-xs text-gray-500">Pay via mobile prompt</span>
+                            </div>
                           </div>
                         </button>
 
@@ -404,19 +367,22 @@ export default function CheckoutPage() {
                         <button
                           type="button"
                           onClick={() => setSelectedPaymentMethod('bank')}
-                          className={`p-4 border-2 rounded-xl transition-all hover:shadow-lg ${
+                          className={`p-6 border-2 rounded-xl transition-all hover:shadow-lg ${
                             selectedPaymentMethod === 'bank'
                               ? 'border-[#00b050] bg-[#00b050]/5'
                               : 'border-gray-200 hover:border-[#00b050]/50'
                           }`}
                         >
-                          <div className="flex flex-col items-center gap-2">
-                            <div className="w-16 h-16 bg-gradient-to-br from-green-600 to-green-700 rounded-lg flex items-center justify-center shadow-md">
-                              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <div className="flex flex-col items-center gap-3">
+                            <div className="w-20 h-20 bg-gradient-to-br from-green-600 to-green-700 rounded-lg flex items-center justify-center shadow-md">
+                              <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
                               </svg>
                             </div>
-                            <span className="text-sm font-medium text-gray-700">Bank Transfer</span>
+                            <div className="text-center">
+                              <span className="text-base font-semibold text-gray-900 block">Bank Transfer</span>
+                              <span className="text-xs text-gray-500">Upload proof of payment</span>
+                            </div>
                           </div>
                         </button>
                       </div>
@@ -438,7 +404,11 @@ export default function CheckoutPage() {
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
-                            {selectedPaymentMethod === 'bank' ? 'View Bank Details' : 'Proceed to Payment'}
+                            {selectedPaymentMethod === 'bank' 
+                              ? 'View Bank Details' 
+                              : selectedPaymentMethod === 'ecocash'
+                              ? 'Send Payment Prompt to Phone'
+                              : 'Proceed to Payment'}
                           </>
                         )}
                       </button>
