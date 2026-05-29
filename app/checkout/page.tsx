@@ -180,7 +180,6 @@ export default function CheckoutPage() {
     setLoading(true);
 
     try {
-      // Create FormData for file upload
       const formDataToSend = new FormData();
       formDataToSend.append('firstName', formData.firstName.trim());
       formDataToSend.append('lastName', formData.lastName.trim());
@@ -209,7 +208,12 @@ export default function CheckoutPage() {
 
       clearCart();
       setShowBankModal(false);
-      router.push(`/confirmation?order_id=${data.order_id}&bank=1`);
+      
+      // Show success message and redirect to store
+      toast.success('Order received! We will call you to confirm.');
+      setTimeout(() => {
+        router.push('/shop');
+      }, 2000);
     } catch (error: any) {
       toast.error(error.message || 'Something went wrong');
       setLoading(false);
