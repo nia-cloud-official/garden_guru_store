@@ -123,22 +123,47 @@ export async function initiatePaynow(
     console.log(`[${logId}] Sending Paynow mobile payment via ${mobileService}`);
     response = await paynow.sendMobile(payment, normalizedPhone, mobileService);
 
-    console.log(`[${logId}] Paynow sendMobile response:`, {
+    console.log(`[${logId}] DEBUG - Raw Paynow response:`, response);
+    console.log(`[${logId}] DEBUG - Response type:`, typeof response);
+    console.log(`[${logId}] DEBUG - Response keys:`, Object.keys(response || {}));
+    console.log(`[${logId}] DEBUG - Response properties:`, {
       success: response?.success,
-      hasPollUrl: !!response?.pollUrl,
-      hasTransaction: !!response?.transaction,
+      successType: typeof response?.success,
+      pollUrl: response?.pollUrl,
+      pollUrlType: typeof response?.pollUrl,
+      redirectUrl: response?.redirectUrl,
+      redirectUrlType: typeof response?.redirectUrl,
+      transaction: response?.transaction,
+      transactionType: typeof response?.transaction,
+      reference: response?.reference,
+      referenceType: typeof response?.reference,
+      error: response?.error,
+      errorType: typeof response?.error,
     });
 
     if (!response?.success) {
+      console.error(`[${logId}] Paynow returned success=false`, { error: response?.error });
       return { success: false, error: response?.error || 'Paynow initiation failed' };
     }
 
-    return {
+    const result: PaynowInitiateResult = {
       success: true,
       redirectUrl: response?.redirectUrl,
       pollUrl: response?.pollUrl,
       transactionId: response?.transaction || response?.reference,
     };
+
+    console.log(`[${logId}] DEBUG - Final result object:`, {
+      success: result.success,
+      redirectUrl: result.redirectUrl,
+      redirectUrlType: typeof result.redirectUrl,
+      pollUrl: result.pollUrl,
+      pollUrlType: typeof result.pollUrl,
+      transactionId: result.transactionId,
+      transactionIdType: typeof result.transactionId,
+    });
+
+    return result;
   } catch (err: any) {
     console.error(`[${logId}] initiatePaynow error:`, err);
     return { success: false, error: err?.message || 'Paynow error' };

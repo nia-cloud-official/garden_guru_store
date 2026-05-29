@@ -155,6 +155,18 @@ export async function POST(request: NextRequest) {
     const totalDuration = Date.now() - checkoutStartTime;
     console.log(`[${requestId}] Checkout completed successfully (total: ${totalDuration}ms)`);
 
+    // DEBUG: Log the paynow result structure
+    console.log(`[${requestId}] DEBUG - paynowResult object:`, {
+      success: paynowResult.success,
+      pollUrlType: typeof paynowResult.pollUrl,
+      pollUrlValue: paynowResult.pollUrl,
+      redirectUrlType: typeof paynowResult.redirectUrl,
+      redirectUrlValue: paynowResult.redirectUrl,
+      transactionIdType: typeof paynowResult.transactionId,
+      transactionIdValue: paynowResult.transactionId,
+      keys: Object.keys(paynowResult),
+    });
+
     const responsePayload = {
       success: true,
       order_id: orderId,
@@ -162,6 +174,25 @@ export async function POST(request: NextRequest) {
       ...(paynowResult.redirectUrl && { redirect_url: paynowResult.redirectUrl }),
     };
 
+    // DEBUG: Log the response payload before serialization
+    console.log(`[${requestId}] DEBUG - responsePayload before JSON:`, {
+      keys: Object.keys(responsePayload),
+      successType: typeof responsePayload.success,
+      orderIdType: typeof responsePayload.order_id,
+      pollUrlType: typeof responsePayload.poll_url,
+      redirectUrlType: typeof responsePayload.redirect_url,
+    });
+
+    // Try to serialize and catch any errors
+    try {
+      const serialized = JSON.stringify(responsePayload);
+      console.log(`[${requestId}] DEBUG - Serialized successfully, length: ${serialized.length} bytes`);
+    } catch (serializeErr) {
+      console.error(`[${requestId}] DEBUG - Serialization error:`, serializeErr);
+      return NextResponse.json({ error: 'Failed to serialize response', details: String(serializeErr) }, { status: 500 });
+    }
+
+    console.log(`[${requestId}] Returning response`);
     return NextResponse.json(responsePayload);
   } catch (error: any) {
     const totalDuration = Date.now() - checkoutStartTime;

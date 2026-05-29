@@ -94,45 +94,78 @@ export default function CheckoutPage() {
     setLoading(true);
 
     try {
+      console.log('🛒 Starting checkout request...');
+      const checkoutPayload = {
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
+        email: formData.email.trim(),
+        phone: cleanPhone(formData.phone),
+        paymentMethod: selectedPaymentMethod,
+        cart: cartItems.map((item) => ({
+          product_id: item.product.id,
+          product_name: item.product.name,
+          product_price: item.product.price,
+          quantity: item.quantity,
+        })),
+        subtotal: cartSubtotal,
+      };
+      console.log('📦 Checkout payload:', checkoutPayload);
+
+      const startTime = Date.now();
       const response = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          firstName: formData.firstName.trim(),
-          lastName: formData.lastName.trim(),
-          email: formData.email.trim(),
-          phone: cleanPhone(formData.phone),
-          paymentMethod: selectedPaymentMethod,
-          cart: cartItems.map((item) => ({
-            product_id: item.product.id,
-            product_name: item.product.name,
-            product_price: item.product.price,
-            quantity: item.quantity,
-          })),
-          subtotal: cartSubtotal,
-        }),
+        body: JSON.stringify(checkoutPayload),
+      });
+      const duration = Date.now() - startTime;
+
+      console.log(`⏱️  Checkout request took ${duration}ms`);
+      console.log(`📊 Response status: ${response.status} ${response.statusText}`);
+      console.log(`📋 Response headers:`, {
+        contentType: response.headers.get('content-type'),
+        contentLength: response.headers.get('content-length'),
       });
 
-      const data = await response.json();
+      let data;
+      try {
+        data = await response.json();
+        console.log('✅ Response parsed as JSON:', data);
+      } catch (parseErr) {
+        console.error('❌ Failed to parse response as JSON:', parseErr);
+        console.log('📝 Raw response text:', await response.text());
+        throw new Error('Server returned invalid JSON response');
+      }
 
       if (!response.ok) {
-        throw new Error(data.error || 'Checkout failed');
+        console.error(`❌ Checkout failed with status ${response.status}:`, data);
+        throw new Error(data.error || `Checkout failed with status ${response.status}`);
       }
+
+      console.log('✨ Checkout successful, got response:', data);
 
       clearCart();
 
       if (data.poll_url) {
+        console.log('🎯 Redirecting to confirmation with poll_url:', data.poll_url);
         router.push(`/confirmation?order_id=${data.order_id}&poll_url=${encodeURIComponent(data.poll_url)}`);
         return;
       }
 
       if (data.redirect_url && typeof window !== 'undefined') {
+        console.log('🔄 Redirecting to PayNow:', data.redirect_url);
         window.location.href = data.redirect_url;
         return;
       }
 
+      console.log('📍 Redirecting to confirmation page');
       router.push(`/confirmation?order_id=${data.order_id}`);
     } catch (error: any) {
+      console.error('💥 Checkout error caught:', {
+        message: error.message,
+        name: error.name,
+        stack: error.stack,
+        error: error,
+      });
       toast.error(error.message || 'Something went wrong');
       setLoading(false);
     }
