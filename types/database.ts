@@ -202,6 +202,7 @@ export interface Database {
           payment_status: string
           paynow_poll_url: string | null
           paynow_reference: string | null
+          proof_of_payment_url: string | null
           notes: string | null
           customer_notes: string | null
           ip_address: string | null
@@ -233,6 +234,7 @@ export interface Database {
           payment_status?: string
           paynow_poll_url?: string | null
           paynow_reference?: string | null
+          proof_of_payment_url?: string | null
           notes?: string | null
           customer_notes?: string | null
           ip_address?: string | null
@@ -264,6 +266,7 @@ export interface Database {
           payment_status?: string
           paynow_poll_url?: string | null
           paynow_reference?: string | null
+          proof_of_payment_url?: string | null
           notes?: string | null
           customer_notes?: string | null
           ip_address?: string | null

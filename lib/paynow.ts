@@ -118,10 +118,21 @@ export async function initiatePaynow(
 
     const normalizedPhone = cleanPhone(phone || '');
     let response: any;
-    const mobileService = paymentMethod === 'ecocash' ? 'ecocash' : 'paynow';
-
-    console.log(`[${logId}] Sending Paynow mobile payment via ${mobileService}`);
-    response = await paynow.sendMobile(payment, normalizedPhone, mobileService);
+    
+    // PayNow sendMobile only supports 'ecocash' as the service parameter
+    // For 'paynow' payment method, use the regular send() method which returns a redirect URL
+    console.log(`[${logId}] Payment method: ${paymentMethod}`);
+    
+    if (paymentMethod === 'ecocash') {
+      console.log(`[${logId}] Sending via sendMobile (ecocash)`);
+      response = await paynow.sendMobile(payment, normalizedPhone, 'ecocash');
+    } else if (paymentMethod === 'paynow') {
+      console.log(`[${logId}] Sending via regular send() for Paynow web checkout`);
+      response = await paynow.send(payment);
+    } else {
+      console.error(`[${logId}] Unsupported payment method: ${paymentMethod}`);
+      return { success: false, error: `Unsupported payment method: ${paymentMethod}` };
+    }
 
     console.log(`[${logId}] DEBUG - Raw Paynow response:`, response);
     console.log(`[${logId}] DEBUG - Response type:`, typeof response);
