@@ -40,7 +40,6 @@ function ConfirmationContent() {
   const [pollCount, setPollCount] = useState(0);  
   const [error, setError] = useState<string | null>(null);  
   
-  // Poll payment status if poll_url is provided  
   useEffect(() => {  
     if (!pollUrl || !orderId || !isDemo) {  
       return;  
@@ -59,7 +58,6 @@ function ConfirmationContent() {
             
           if (data.paid) {  
             setPolling(false);  
-            // Refresh order data to get updated status  
             fetchOrder();  
           }  
         } else {  
@@ -71,10 +69,8 @@ function ConfirmationContent() {
       }  
     };  
   
-    // Initial poll  
     pollPayment();  
   
-    // Poll every 5 seconds, max 60 attempts (5 minutes)  
     const interval = setInterval(() => {  
       setPollCount((prev) => {  
         if (prev >= 60) {  
@@ -123,7 +119,6 @@ function ConfirmationContent() {
         items: itemsData || [],  
       });  
         
-      // Update payment status from database  
       if ((orderData as any).payment_status === 'paid') {  
         setPaymentStatus('paid');  
         setPolling(false);  
@@ -152,9 +147,7 @@ function ConfirmationContent() {
       <div className="min-h-screen flex items-center justify-center">  
         <div className="text-center">  
           <h1 className="text-3xl font-comic text-gray-900 mb-4">Order Not Found</h1>  
-          <Link href="/shop" className="btn-primary">  
-            Continue Shopping  
-          </Link>  
+          <Link href="/shop" className="btn-primary">Continue Shopping</Link>  
         </div>  
       </div>  
     );  
@@ -174,7 +167,6 @@ function ConfirmationContent() {
     <section className="py-20 bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">  
       <div className="container mx-auto px-4">  
         <div className="max-w-3xl mx-auto">  
-          {/* Success Icon */}  
           <div className="text-center mb-8">  
             <div className={`inline-flex items-center justify-center w-24 h-24 rounded-full mb-6 ${  
               paymentStatus === 'paid' ? 'bg-green-500' : 'bg-primary'  
@@ -194,25 +186,16 @@ function ConfirmationContent() {
             <h1 className="text-4xl md:text-5xl font-comic text-gray-900 mb-4">  
               {paymentStatus === 'paid' ? 'Payment Successful!' : 'Order Received!'}  
             </h1>  
-            <p className="text-xl text-gray-600">  
-              Thank you for your order, {order.first_name}!  
-            </p>  
-            {isDemo && (  
-              <p className={`text-lg font-semibold mt-2 ${statusMessage.color}`}>  
-                {statusMessage.text}  
-              </p>  
-            )}  
+            <p className="text-xl text-gray-600">Thank you for your order, {order.first_name}!</p>  
+            {isDemo && <p className={`text-lg font-semibold mt-2 ${statusMessage.color}`}>{statusMessage.text}</p>}  
           </div>  
   
-          {/* Order Details Card */}  
           <div className="bg-white rounded-3xl shadow-2xl border border-gray-200 overflow-hidden mb-6">  
             <div className="bg-primary text-white p-6">  
               <h2 className="text-2xl font-comic mb-2">Order Details</h2>  
               <p className="text-white/90">Order ID: <span className="font-mono font-bold">{order.order_number}</span></p>  
             </div>  
-  
             <div className="p-8">  
-              {/* Customer Info */}  
               <div className="mb-8">  
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Customer Information</h3>  
                 <div className="space-y-2 text-gray-600">  
@@ -222,8 +205,6 @@ function ConfirmationContent() {
                   <p><strong>Payment Status:</strong> <span className={`font-semibold capitalize ${statusMessage.color}`}>{order.payment_status.replace('_', ' ')}</span></p>  
                 </div>  
               </div>  
-  
-              {/* Order Items */}  
               <div className="mb-8">  
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Order Items</h3>  
                 <div className="space-y-3">  
@@ -238,8 +219,6 @@ function ConfirmationContent() {
                   ))}  
                 </div>  
               </div>  
-  
-              {/* Total */}  
               <div className="border-t-2 border-gray-300 pt-4">  
                 <div className="flex justify-between items-center text-2xl font-bold">  
                   <span>Total</span>  
@@ -249,7 +228,6 @@ function ConfirmationContent() {
             </div>  
           </div>  
   
-          {/* Next Steps */}  
           <div className="bg-white rounded-3xl shadow-lg border border-gray-200 p-8 mb-6">  
             <h3 className="text-2xl font-comic text-gray-900 mb-4">What's Next?</h3>  
             <div className="space-y-4 text-gray-600">  
@@ -263,38 +241,19 @@ function ConfirmationContent() {
                     <span className="text-primary text-xl">⏳</span>  
                     <span>This page will automatically update when payment is confirmed.</span>  
                   </p>  
-                  {polling && (  
-                    <p className="flex items-start gap-3">  
-                      <span className="text-primary text-xl">🔄</span>  
-                      <span>Checking payment status... (attempt {pollCount + 1}/60)</span>  
-                    </p>  
-                  )}  
+                  {polling && <p className="flex items-start gap-3"><span className="text-primary text-xl">🔄</span><span>Checking payment status... (attempt {pollCount + 1}/60)</span></p>}  
                 </>  
               ) : (  
-                <p className="flex items-start gap-3">  
-                  <span className="text-primary text-xl">✅</span>  
-                  <span>Your payment has been confirmed!</span>  
-                </p>  
+                <p className="flex items-start gap-3"><span className="text-primary text-xl">✅</span><span>Your payment has been confirmed!</span></p>  
               )}  
-              <p className="flex items-start gap-3">  
-                <span className="text-primary text-xl">🌿</span>  
-                <span>Visit us at {process.env.NEXT_PUBLIC_STORE_ADDRESS} to collect your flowers.</span>  
-              </p>  
-              <p className="flex items-start gap-3">  
-                <span className="text-primary text-xl">📞</span>  
-                <span>Questions? Call us at {process.env.NEXT_PUBLIC_STORE_PHONE}</span>  
-              </p>  
+              <p className="flex items-start gap-3"><span className="text-primary text-xl">🌿</span><span>Visit us at {process.env.NEXT_PUBLIC_STORE_ADDRESS} to collect your flowers.</span></p>  
+              <p className="flex items-start gap-3"><span className="text-primary text-xl">📞</span><span>Questions? Call us at {process.env.NEXT_PUBLIC_STORE_PHONE}</span></p>  
             </div>  
           </div>  
   
-          {/* Actions */}  
           <div className="flex flex-col sm:flex-row gap-4">  
-            <Link href="/shop" className="btn-primary flex-1 text-center">  
-              Continue Shopping  
-            </Link>  
-            <Link href="/" className="btn-secondary flex-1 text-center">  
-              Back to Home  
-            </Link>  
+            <Link href="/shop" className="btn-primary flex-1 text-center">Continue Shopping</Link>  
+            <Link href="/" className="btn-secondary flex-1 text-center">Back to Home</Link>  
           </div>  
         </div>  
       </div>  
@@ -304,11 +263,7 @@ function ConfirmationContent() {
   
 export default function ConfirmationPage() {  
   return (  
-    <Suspense fallback={  
-      <div className="min-h-screen flex items-center justify-center">  
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>  
-      </div>  
-    }>  
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}>  
       <ConfirmationContent />  
     </Suspense>  
   );  
