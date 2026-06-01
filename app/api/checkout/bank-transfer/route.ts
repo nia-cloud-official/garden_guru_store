@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';  
 import { supabase } from '@/lib/supabase';  
 import { generateOrderId } from '@/lib/utils';  
+import { sendEmail, generateSimpleBankTransferEmail } from '@/lib/email';  
 import type { Database } from '@/types/database';  
   
 type OrderInsert = Database['public']['Tables']['store_orders']['Insert'];  
@@ -139,6 +140,33 @@ export async function POST(request: NextRequest) {
     console.log(`[${requestId}] Customer: ${firstName} ${lastName}, ${email}, ${phone}`);  
     console.log(`[${requestId}] Proof of payment: ${proofOfPaymentUrl || 'None'}`);  
   
+    // Send email notification to admin with proof of payment
+    if (proofOfPaymentUrl) {
+      const itemsForEmail = cart.map((item) => ({
+        name: item.product_name,
+        quantity: item.quantity,
+        price: item.product_price,
+      }));
+
+      const emailHtml = generateSimpleBankTransferEmail(
+        orderId,
+        `${firstName} ${lastName}`,
+        email,
+        phone,
+        itemsForEmail,
+        subtotal,
+        proofOfPaymentUrl
+      );
+
+      const emailResult = await sendEmail({
+        to: 'tggsalesadministrator@gmail.com',
+        subject: `New Bank Transfer Order #${orderId} - Proof of Payment Uploaded`,
+        html: emailHtml,
+      });
+
+      console.log(`[${requestId}] Email notification:`, emailResult.success ? 'sent' : 'failed to send');
+    }
+
     return NextResponse.json({  
       success: true,  
       order_id: orderId,  

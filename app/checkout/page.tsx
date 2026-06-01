@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';  
 import { useCart } from '@/contexts/CartContext';  
 import { formatPrice, validateZimbabwePhone, cleanPhone } from '@/lib/utils';  
+import PaymentRedirectPopup from '@/components/PaymentRedirectPopup';  
 import toast from 'react-hot-toast';  
   
 export const dynamic = 'force-dynamic';  
@@ -15,6 +16,8 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(false);  
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('');  
   const [showBankModal, setShowBankModal] = useState(false);  
+  const [showPaymentPopup, setShowPaymentPopup] = useState(false);  
+  const [paymentPopupUrl, setPaymentPopupUrl] = useState<string>('');  
   const [proofOfPayment, setProofOfPayment] = useState<File | null>(null);  
   const [formData, setFormData] = useState({  
     firstName: '',  
@@ -143,19 +146,12 @@ export default function CheckoutPage() {
   
       console.log('✨ Checkout successful, got response:', data);  
   
-      // For EcoCash with poll_url, go to confirmation to show status  
-      if (selectedPaymentMethod === 'ecocash' && data.poll_url) {  
-        console.log('🎯 EcoCash: Redirecting to confirmation with poll_url');  
+      // Show payment popup for PayNow/EcoCash
+      if ((selectedPaymentMethod === 'ecocash' || selectedPaymentMethod === 'paynow') && data.redirect_url) {  
+        console.log('🎯 Showing payment popup with redirect:', data.redirect_url);  
+        setPaymentPopupUrl(data.redirect_url);  
+        setShowPaymentPopup(true);  
         clearCart();  
-        router.push(`/confirmation?order_id=${data.order_id}&poll_url=${encodeURIComponent(data.poll_url)}&demo=1`);  
-        return;  
-      }  
-  
-      // For Paynow web checkout, redirect to their payment page  
-      if (selectedPaymentMethod === 'paynow' && data.redirect_url) {  
-        console.log('🔄 Paynow: Redirecting to payment page:', data.redirect_url);  
-        clearCart();  
-        window.location.href = data.redirect_url;  
         return;  
       }  
   
@@ -256,8 +252,7 @@ export default function CheckoutPage() {
                 <div className="bg-white rounded-3xl shadow-lg border border-gray-200 p-8">  
                   <h3 className="text-3xl font-comic text-gray-900 mb-2">Your Details</h3>  
                   <p className="text-gray-600 mb-8">  
-                    No account needed. Enter your name, email, and phone number — we'll send a Paynow  
-                    payment prompt to your phone and confirmation to your email.  
+                    No account needed. Quick checkout in 2 steps — just your contact info and payment preference. No hidden fees or extra forms.  
                   </p>  
   
                   <form onSubmit={handleSubmit} className="space-y-6">  
@@ -358,7 +353,7 @@ export default function CheckoutPage() {
                             />  
                             <div className="text-center">  
                               <span className="text-base font-semibold text-gray-900 block">EcoCash</span>  
-                              <span className="text-xs text-gray-500">Pay via mobile prompt</span>  
+                              <span className="text-xs text-gray-500">Fast & secure mobile payment</span>  
                             </div>  
                           </div>  
                         </button>  
@@ -407,7 +402,7 @@ export default function CheckoutPage() {
                             {selectedPaymentMethod === 'bank'   
                               ? 'View Bank Details'   
                               : selectedPaymentMethod === 'ecocash'  
-                              ? 'Send Payment Prompt to Phone'  
+                              ? 'Proceed to Payment'  
                               : 'Proceed to Payment'}  
                           </>  
                         )}  
@@ -458,10 +453,18 @@ export default function CheckoutPage() {
         </div>  
       </section>  
   
+      {/* Payment Redirect Popup */}
+      <PaymentRedirectPopup
+        isOpen={showPaymentPopup}
+        redirectUrl={paymentPopupUrl}
+        paymentMethod={selectedPaymentMethod as 'ecocash' | 'paynow'}
+        onClose={() => setShowPaymentPopup(false)}
+      />
+
       {/* Bank Transfer Modal */}  
       {showBankModal && (  
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">  
-          <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">  
+          <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-8">  
               <div className="flex items-center justify-between mb-6">  
                 <h3 className="text-3xl font-comic text-gray-900">Bank Transfer Details</h3>  

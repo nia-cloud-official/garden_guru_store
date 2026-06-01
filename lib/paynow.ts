@@ -113,21 +113,14 @@ export async function initiatePaynow(
     // Add the total amount as a single line item
     payment.add('Order Total', amount);
 
-    const normalizedPhone = cleanPhone(phone || '');
     let response: any;
     
     console.log(`[${logId}] Payment method: ${paymentMethod}, Amount: ${amount}`);
     
-    if (paymentMethod === 'ecocash') {
-      console.log(`[${logId}] Sending via sendMobile (ecocash) to ${normalizedPhone}`);
-      response = await paynow.sendMobile(payment, normalizedPhone, 'ecocash');
-    } else if (paymentMethod === 'paynow') {
-      console.log(`[${logId}] Sending via regular send() for Paynow web checkout`);
-      response = await paynow.send(payment);
-    } else {
-      console.error(`[${logId}] Unsupported payment method: ${paymentMethod}`);
-      return { success: false, error: `Unsupported payment method: ${paymentMethod}` };
-    }
+    // Both ecocash and paynow use the same send() method
+    // The difference is handled by PayNow backend based on amount/customer
+    console.log(`[${logId}] Sending payment via PayNow`);
+    response = await paynow.send(payment);
 
     console.log(`[${logId}] Paynow response:`, JSON.stringify(response, null, 2));
 
@@ -141,11 +134,13 @@ export async function initiatePaynow(
       return { success: false, error: response.error || 'Paynow initiation failed' };
     }
 
+    // Extract only serializable properties from response
     const result: PaynowInitiateResult = {
       success: true,
-      redirectUrl: response.redirectUrl,
-      pollUrl: response.pollUrl,
-      transactionId: response.transaction || response.reference,
+      redirectUrl: typeof response?.redirectUrl === 'string' ? response.redirectUrl : undefined,
+      pollUrl: typeof response?.pollUrl === 'string' ? response.pollUrl : undefined,
+      transactionId: typeof response?.transaction === 'string' ? response.transaction : 
+                     (typeof response?.reference === 'string' ? response.reference : undefined),
     };
 
     console.log(`[${logId}] Success:`, result);
