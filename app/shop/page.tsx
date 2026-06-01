@@ -69,7 +69,7 @@ export default async function ShopPage({
   {/* Background Image */}
   <div className="absolute inset-0">
     <img
-      src={"https://corlssldodxydzihxydm.supabase.co/storage/v1/object/public/store-assets/products/RIC04282.jpg"}
+      src={"https://corlssldodxydzihxydm.supabase.co/storage/v1/object/public/store-assets/compressed/RIC04282.jpg"}
       alt="Flowers and plants"
       className="w-full h-full object-cover blur-[2px] scale-105"
     />
