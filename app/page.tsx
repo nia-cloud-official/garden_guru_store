@@ -2,6 +2,11 @@ import { supabase } from '@/lib/supabase';
 import ProductCard from '@/components/ProductCard';
 import Link from 'next/link';
 import promotionsData from '@/data/promotions.json';
+import StoreFilters from '@/components/StoreFilters';
+import FeaturedSection from '@/components/FeaturedSection';
+import BenefitsSection from '@/components/BenefitsSection';
+import TestimonialsSection from '@/components/TestimonialsSection';
+import NewsletterSection from '@/components/NewsletterSection';
 
 async function getProducts(category?: string) {
   let query = supabase
