@@ -111,9 +111,40 @@ export default async function ShopPage({
       {/* Shop Content */}
       <section className="py-16 bg-white">
         <div className="container mx-auto px-4">
+          {/* Mobile Categories - Horizontal Scroll */}
+          <div className="lg:hidden mb-8">
+            <div className="overflow-x-auto pb-2 -mx-4 px-4">
+              <div className="flex gap-2 min-w-min">
+                <Link
+                  href="/"
+                  className={`px-4 py-2 rounded-full whitespace-nowrap font-semibold transition-all flex-shrink-0 ${
+                    activeCategory === ''
+                      ? 'bg-[#00b050] text-white shadow-lg'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  All Products
+                </Link>
+                {categories.map((cat) => (
+                  <Link
+                    key={cat.slug}
+                    href={`/shop?cat=${cat.slug}`}
+                    className={`px-4 py-2 rounded-full whitespace-nowrap font-semibold transition-all flex-shrink-0 ${
+                      activeCategory === cat.slug
+                        ? 'bg-[#00b050] text-white shadow-lg'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    {cat.name}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+
           <div className="flex flex-col lg:flex-row gap-8">
-            {/* Sidebar */}
-            <aside className="lg:w-64 flex-shrink-0">
+            {/* Desktop Sidebar */}
+            <aside className="hidden lg:block lg:w-64 flex-shrink-0">
               <div className="bg-white/80 backdrop-blur-glass rounded-3xl p-6 border border-gray-200 shadow-lg sticky top-24">
                 <h3 className="text-2xl font-comic text-gray-900 mb-6">
                   Categories
@@ -124,11 +155,11 @@ export default async function ShopPage({
                       href="/"
                       className={`block px-4 py-3 rounded-xl transition-all ${
                         activeCategory === ''
-                          ? 'bg-primary text-white font-semibold'
+                          ? 'bg-[#00b050] text-white font-semibold'
                           : 'text-gray-700 hover:bg-gray-100'
                       }`}
                     >
-                      All
+                      All Products
                       <span className="float-right text-sm opacity-80">
                         ({products.length})
                       </span>
@@ -140,7 +171,7 @@ export default async function ShopPage({
                         href={`/shop?cat=${cat.slug}`}
                         className={`block px-4 py-3 rounded-xl transition-all ${
                           activeCategory === cat.slug
-                            ? 'bg-primary text-white font-semibold'
+                            ? 'bg-[#00b050] text-white font-semibold'
                             : 'text-gray-700 hover:bg-gray-100'
                         }`}
                       >
