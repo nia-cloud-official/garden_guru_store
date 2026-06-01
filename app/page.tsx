@@ -2,7 +2,7 @@ import { supabase } from '@/lib/supabase';
 import ProductCard from '@/components/ProductCard';
 import Link from 'next/link';
 import promotionsData from '@/data/promotions.json';
-import StoreFilters from '@/components/StoreFilters';
+import ProductsGrid from '@/components/ProductsGrid';
 import FeaturedSection from '@/components/FeaturedSection';
 import BenefitsSection from '@/components/BenefitsSection';
 import TestimonialsSection from '@/components/TestimonialsSection';
@@ -154,47 +154,11 @@ export default async function ShopPage({
 
             {/* Products Grid */}
             <div className="flex-1">
-              <div className="mb-8 p-4 bg-white/80 backdrop-blur-glass rounded-2xl border border-gray-200">
-                <p className="text-gray-600">
-                  Showing <strong className="text-gray-900">{products.length}</strong> product
-                  {products.length !== 1 ? 's' : ''}
-                  {activeCategory && (
-                    <span>
-                      {' '}in <strong className="text-primary">{activeCategory}</strong>
-                    </span>
-                  )}
-                </p>
-              </div>
-
-              {products.length === 0 ? (
-                <div className="text-center py-20 bg-white/80 backdrop-blur-glass rounded-3xl border border-gray-200">
-                  <svg
-                    className="w-16 h-16 text-gray-300 mx-auto mb-6"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                    />
-                  </svg>
-                  <h4 className="text-2xl font-comic text-gray-900 mb-4">
-                    No products found
-                  </h4>
-                  <Link href="/shop" className="btn-primary inline-block">
-                    View All
-                  </Link>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {products.map((product) => (
-                    <ProductCard key={product.id} product={product} />
-                  ))}
-                </div>
-              )}
+              <ProductsGrid 
+                allProducts={products}
+                categories={categories}
+                activeCategory={activeCategory}
+              />
             </div>
           </div>
         </div>
@@ -268,6 +232,22 @@ export default async function ShopPage({
                 </div>
               </section>
             )}
+
+      {/* Benefits Section */}
+      <BenefitsSection />
+
+      {/* Featured/Best Sellers Section */}
+      <FeaturedSection
+        products={products}
+        title="Best Sellers"
+        subtitle="Customer Favorites"
+      />
+
+      {/* Testimonials Section */}
+      <TestimonialsSection />
+
+      {/* Newsletter Section */}
+      <NewsletterSection />
     </>
   );
 }
