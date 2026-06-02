@@ -146,19 +146,28 @@ export default function CheckoutPage() {
   
       console.log('✨ Checkout successful, got response:', data);  
   
-      // Show payment popup for PayNow/EcoCash
-      if ((selectedPaymentMethod === 'ecocash' || selectedPaymentMethod === 'paynow') && data.redirect_url) {  
+      // Clear cart first
+      clearCart();
+      
+      // For EcoCash, go straight to confirmation page (USSD prompt sent to phone)
+      // For Paynow web, show redirect popup
+      if (selectedPaymentMethod === 'ecocash' || !data.redirect_url) {  
+        console.log('📍 Redirecting to confirmation page (EcoCash - USSD sent to phone)');  
+        const confirmUrl = `/confirmation?order_id=${data.order_id}`;
+        if (data.redirect_url) {
+          // Pass poll URL for status checking
+          const pollUrl = new URL(data.redirect_url).searchParams.get('guid');
+          if (pollUrl) {
+            router.push(`${confirmUrl}&poll_url=${encodeURIComponent(data.redirect_url)}&demo=1`);
+            return;
+          }
+        }
+        router.push(confirmUrl);
+      } else if (selectedPaymentMethod === 'paynow' && data.redirect_url) {
         console.log('🎯 Showing payment popup with redirect:', data.redirect_url);  
         setPaymentPopupUrl(data.redirect_url);  
         setShowPaymentPopup(true);  
-        clearCart();  
-        return;  
       }  
-  
-      // Fallback to confirmation  
-      console.log('📍 Redirecting to confirmation page');  
-      clearCart();  
-      router.push(`/confirmation?order_id=${data.order_id}`);  
     } catch (error: any) {  
       console.error('💥 Checkout error caught:', {  
         message: error.message,  

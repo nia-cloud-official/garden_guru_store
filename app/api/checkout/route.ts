@@ -190,6 +190,7 @@ export async function POST(request: NextRequest) {
       success: true,
       order_id: orderId,
       redirect_url: paynowResult.redirectUrl,
+      poll_url: paynowResult.pollUrl,
     };
 
     try {
