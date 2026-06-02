@@ -115,14 +115,20 @@ export async function initiatePaynow(
 
     let response: any;
     
-    console.log(`[${logId}] Payment method: ${paymentMethod}, Amount: ${amount}`);
+    console.log(`[${logId}] Payment details - Method: ${paymentMethod}, Amount: ${amount}, Phone: ${phone}`);
     
-    // Both ecocash and paynow use the same send() method
-    // The difference is handled by PayNow backend based on amount/customer
-    console.log(`[${logId}] Sending payment via PayNow`);
-    response = await paynow.send(payment);
+    if (paymentMethod === 'ecocash' && phone) {
+      // EcoCash mobile money - sends USSD prompt directly to phone
+      const normalizedPhone = cleanPhone(phone);
+      console.log(`[${logId}] Initiating EcoCash mobile payment to ${normalizedPhone}`);
+      response = await paynow.sendMobile(payment, normalizedPhone, 'ecocash');
+    } else {
+      // Paynow web payment - redirects to payment page
+      console.log(`[${logId}] Initiating Paynow web payment`);
+      response = await paynow.send(payment);
+    }
 
-    console.log(`[${logId}] Paynow response:`, JSON.stringify(response, null, 2));
+    console.log(`[${logId}] Paynow raw response:`, JSON.stringify(response, null, 2));
 
     if (!response || typeof response.success === 'undefined') {
       console.error(`[${logId}] Invalid Paynow response`);

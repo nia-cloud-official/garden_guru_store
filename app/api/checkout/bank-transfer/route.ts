@@ -140,7 +140,6 @@ export async function POST(request: NextRequest) {
     console.log(`[${requestId}] Customer: ${firstName} ${lastName}, ${email}, ${phone}`);  
     console.log(`[${requestId}] Proof of payment: ${proofOfPaymentUrl || 'None'}`);  
   
-    // Send email notification to admin with proof of payment
     if (proofOfPaymentUrl) {
       const itemsForEmail = cart.map((item) => ({
         name: item.product_name,
