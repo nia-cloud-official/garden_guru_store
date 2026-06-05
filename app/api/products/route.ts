@@ -26,10 +26,10 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '8', 10);
     const offset = parseInt(searchParams.get('offset') || '0', 10);
 
-    // FIX: Changed target from 'plants' to 'store_products'
+    // REMOVED: category and stock_quantity from selection
     const { data: products, error } = await supabase
       .from('store_products')
-      .select('id, name, description, price, image_url, category, stock_quantity')
+      .select('id, name, description, price, image_url')
       .eq('is_active', true)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
