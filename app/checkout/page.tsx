@@ -17,7 +17,11 @@ export default function CheckoutPage() {
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('');  
   const [showBankModal, setShowBankModal] = useState(false);  
   const [showPaymentPopup, setShowPaymentPopup] = useState(false);  
-  const [paymentPopupUrl, setPaymentPopupUrl] = useState<string>('');  
+  const [paymentPopupUrl, setPaymentPopupUrl] = useState<string>('');
+  const [showConfirmationModal, setShowConfirmationModal] = useState(false);
+  const [showEcoCashModal, setShowEcoCashModal] = useState(false);
+  const [ecoCashStatus, setEcoCashStatus] = useState<'pending' | 'paid'>('pending');
+  const [currentOrderId, setCurrentOrderId] = useState<string>('');  
   const [proofOfPayment, setProofOfPayment] = useState<File | null>(null);  
   const [formData, setFormData] = useState({  
     firstName: '',  
@@ -146,23 +150,27 @@ export default function CheckoutPage() {
   
       console.log('✨ Checkout successful, got response:', data);  
   
+      // Save customer email for account access
+      localStorage.setItem('customer_email', formData.email.trim());
+
       // Clear cart first
       clearCart();
       
-      // For EcoCash, go straight to confirmation page (USSD prompt sent to phone)
+      // For EcoCash, show pending modal
       // For Paynow web, show redirect popup
-      if (selectedPaymentMethod === 'ecocash' || !data.redirect_url) {  
-        console.log('📍 Redirecting to confirmation page (EcoCash - USSD sent to phone)');  
-        const confirmUrl = `/confirmation?order_id=${data.order_id}`;
-        if (data.redirect_url) {
-          // Pass poll URL for status checking
-          const pollUrl = new URL(data.redirect_url).searchParams.get('guid');
-          if (pollUrl) {
-            router.push(`${confirmUrl}&poll_url=${encodeURIComponent(data.redirect_url)}&demo=1`);
-            return;
-          }
-        }
-        router.push(confirmUrl);
+      if (selectedPaymentMethod === 'ecocash') {
+        console.log('📍 Showing EcoCash pending modal');
+        setCurrentOrderId(data.order_id);
+        setEcoCashStatus('pending');
+        setShowEcoCashModal(true);
+        
+        // Simulate payment completion after 3 seconds (in real implementation, poll the payment status)
+        setTimeout(() => {
+          setEcoCashStatus('paid');
+        }, 3000);
+      } else if (!data.redirect_url) {
+        console.log('📍 Redirecting to confirmation page');
+        router.push(`/confirmation?order_id=${data.order_id}`);
       } else if (selectedPaymentMethod === 'paynow' && data.redirect_url) {
         console.log('🎯 Showing payment popup with redirect:', data.redirect_url);  
         setPaymentPopupUrl(data.redirect_url);  
@@ -215,14 +223,14 @@ export default function CheckoutPage() {
         throw new Error(data.error || 'Checkout failed');  
       }  
   
-      clearCart();  
-      setShowBankModal(false);  
+      // Save customer email for account access
+      localStorage.setItem('customer_email', formData.email.trim());
+
+      clearCart();
+      setShowBankModal(false);
         
-      // Show success message and redirect to store  
-      toast.success('Order received! We will call you to confirm.');  
-      setTimeout(() => {  
-        router.push('/shop');  
-      }, 2000);  
+      // Show success confirmation modal
+      setShowConfirmationModal(true);  
     } catch (error: any) {  
       toast.error(error.message || 'Something went wrong');  
       setLoading(false);  
@@ -469,6 +477,75 @@ export default function CheckoutPage() {
         paymentMethod={selectedPaymentMethod as 'ecocash' | 'paynow'}
         onClose={() => setShowPaymentPopup(false)}
       />
+
+      {/* Confirmation Modal */}
+      {showConfirmationModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 text-center">
+            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-4">Order Received!</h3>
+            <p className="text-gray-600 mb-6">
+              Your proof of payment has been submitted successfully. We will call you to confirm your order within 24 hours.
+            </p>
+            <button
+              onClick={() => {
+                setShowConfirmationModal(false);
+                router.push('/shop');
+              }}
+              className="w-full bg-[#00b050] hover:bg-[#009040] text-white py-4 rounded-full font-semibold transition-all"
+            >
+              Continue Shopping
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* EcoCash Payment Status Modal */}
+      {showEcoCashModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 text-center">
+            {ecoCashStatus === 'pending' ? (
+              <>
+                <div className="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <svg className="w-10 h-10 text-yellow-600 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-4">Payment Pending</h3>
+                <p className="text-gray-600 mb-6">
+                  Please check your phone for the EcoCash USSD prompt and complete the payment. This window will update automatically.
+                </p>
+              </>
+            ) : (
+              <>
+                <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-4">Payment Successful!</h3>
+                <p className="text-gray-600 mb-6">
+                  Your payment has been received. Thank you for your order!
+                </p>
+                <button
+                  onClick={() => {
+                    setShowEcoCashModal(false);
+                    router.push(`/confirmation?order_id=${currentOrderId}`);
+                  }}
+                  className="w-full bg-[#00b050] hover:bg-[#009040] text-white py-4 rounded-full font-semibold transition-all"
+                >
+                  View Order Details
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Bank Transfer Modal */}  
       {showBankModal && (  

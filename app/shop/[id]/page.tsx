@@ -9,7 +9,7 @@ import { Product } from '@/types/database';
 import { formatPrice } from '@/lib/utils';
 import { useCart } from '@/contexts/CartContext';
 import toast from 'react-hot-toast';
-import { ChevronLeft, ChevronRight, Info } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Info, Sprout } from 'lucide-react';
 
 export default function ProductPage() {
   const params = useParams();
@@ -20,6 +20,7 @@ export default function ProductPage() {
   const [loading, setLoading] = useState(true);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [images, setImages] = useState<string[]>([]);
+  const [showPlantingModal, setShowPlantingModal] = useState(false);
 
   useEffect(() => {
     async function fetchProduct() {
@@ -288,15 +289,24 @@ export default function ProductPage() {
               </div>
 
               {/* Learn More Link */}
-              <a
-                href={`https://www.gardenguru.co.zw/wiki/${product.slug || product.name.toLowerCase().replace(/\s+/g, '-')}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 text-primary hover:text-primary-dark font-medium transition-colors py-3"
-              >
-                <Info size={20} />
-                Learn more about this product
-              </a>
+              <div className="space-y-2">
+                <button
+                  onClick={() => setShowPlantingModal(true)}
+                  className="flex items-center justify-center gap-2 text-primary hover:text-primary-dark font-medium transition-colors py-3 w-full"
+                >
+                  <Sprout size={20} />
+                  How to Plant
+                </button>
+                <a
+                  href={`https://www.gardenguru.co.zw/wiki/${product.slug || product.name.toLowerCase().replace(/\s+/g, '-')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 text-primary hover:text-primary-dark font-medium transition-colors py-3"
+                >
+                  <Info size={20} />
+                  Learn more about this product
+                </a>
+              </div>
 
               {/* Product Meta */}
               <div className="border-t border-gray-200 pt-6 space-y-2 text-sm">
@@ -315,6 +325,93 @@ export default function ProductPage() {
           </div>
         </div>
       </section>
+
+      {/* How to Plant Modal */}
+      {showPlantingModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-8">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-3xl font-comic text-gray-900 flex items-center gap-3">
+                  <Sprout className="text-[#00b050]" size={32} />
+                  How to Plant
+                </h3>
+                <button
+                  onClick={() => setShowPlantingModal(false)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="bg-gradient-to-br from-[#00b050]/10 to-[#00b050]/5 rounded-2xl p-6 mb-6">
+                <h4 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <Sprout className="w-5 h-5 text-[#00b050]" />
+                  Planting Guide for {product.name}
+                </h4>
+                <div className="space-y-4 text-sm text-gray-700">
+                  <div className="flex items-start gap-3">
+                    <div className="bg-[#00b050] text-white rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0 font-bold">1</div>
+                    <p>Choose a suitable location with adequate sunlight and well-draining soil.</p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="bg-[#00b050] text-white rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0 font-bold">2</div>
+                    <p>Dig a hole twice as wide as the root ball and slightly deeper than the container.</p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="bg-[#00b050] text-white rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0 font-bold">3</div>
+                    <p>Gently remove the plant from its container and loosen the roots if they're circling.</p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="bg-[#00b050] text-white rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0 font-bold">4</div>
+                    <p>Place the plant in the hole, ensuring the top of the root ball is level with the soil surface.</p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="bg-[#00b050] text-white rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0 font-bold">5</div>
+                    <p>Fill the hole with soil, water thoroughly, and add mulch around the base to retain moisture.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+                <div className="flex gap-3">
+                  <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div className="text-sm text-blue-800">
+                    <p className="font-semibold mb-1">Pro Tips:</p>
+                    <ul className="list-disc list-inside space-y-1">
+                      <li>Water regularly during the first few weeks after planting</li>
+                      <li>Add organic compost to enrich the soil</li>
+                      <li>Monitor for pests and diseases regularly</li>
+                      <li>For specific care instructions, visit our wiki page</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                <button
+                  onClick={() => setShowPlantingModal(false)}
+                  className="flex-1 btn-secondary"
+                >
+                  Close
+                </button>
+                <a
+                  href={`https://www.gardenguru.co.zw/wiki/${product.slug || product.name.toLowerCase().replace(/\s+/g, '-')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 btn-primary text-center"
+                >
+                  Visit Wiki for More Info
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

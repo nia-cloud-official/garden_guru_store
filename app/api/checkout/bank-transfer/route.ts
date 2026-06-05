@@ -89,8 +89,41 @@ export async function POST(request: NextRequest) {
       console.log(`[${requestId}] No file provided, continuing without proof of payment`);  
     }  
   
-    const orderId = generateOrderId();  
-    console.log(`[${requestId}] Order ID: ${orderId}`);  
+      console.log(`[${requestId}] Order ID: ${orderId}`);
+  
+    // Auto-create customer account if doesn't exist
+    try {
+      const { data: existingCustomer } = await supabase
+        .from('store_customers')
+        .select('id, email')
+        .eq('email', email)
+        .single();
+
+      if (!existingCustomer) {
+        console.log(`[${requestId}] Creating new customer account for ${email}`);
+        const { data: newCustomer, error: customerError } = await supabase
+          .from('store_customers')
+          .insert({
+            email,
+            first_name: firstName,
+            last_name: lastName,
+            phone: phone,
+            created_at: new Date().toISOString(),
+          })
+          .select()
+          .single();
+
+        if (customerError) {
+          console.warn(`[${requestId}] Could not create customer account:`, customerError);
+        } else {
+          console.log(`[${requestId}] Customer account created: ${newCustomer.id}`);
+        }
+      } else {
+        console.log(`[${requestId}] Customer exists: ${existingCustomer.id}`);
+      }
+    } catch (customerErr) {
+      console.warn(`[${requestId}] Customer creation error (continuing):`, customerErr);
+    }
   
     // Create order (with or without proof of payment URL)  
     const orderInsert: OrderInsert = {  
@@ -139,6 +172,36 @@ export async function POST(request: NextRequest) {
     console.log(`[${requestId}] Customer: ${firstName} ${lastName}, ${email}, ${phone}`);  
     console.log(`[${requestId}] Proof of payment: ${proofOfPaymentUrl || 'None'}`);  
     console.log(`[${requestId}] ⚠️ ADMIN ACTION REQUIRED: Check order in ERP and call customer at ${phone}`);
+  
+    // Send email notification to gardenguru10@gmail.com
+    try {
+      const { sendEmail, generateSimpleBankTransferEmail } = await import('@/lib/email');
+      
+      const emailHtml = generateSimpleBankTransferEmail(
+        orderId,
+        `${firstName} ${lastName}`,
+        email,
+        phone,
+        cart.map(item => ({
+          name: item.product_name,
+          quantity: item.quantity,
+          price: item.product_price
+        })),
+        subtotal,
+        proofOfPaymentUrl || 'No proof of payment uploaded'
+      );
+
+      await sendEmail({
+        to: 'gardenguru10@gmail.com',
+        subject: `New Bank Transfer Order #${orderId}`,
+        html: emailHtml
+      });
+
+      console.log(`[${requestId}] Email sent to gardenguru10@gmail.com`);
+    } catch (emailError) {
+      console.error(`[${requestId}] Failed to send email:`, emailError);
+      // Don't fail the request if email fails
+    }
   
     return NextResponse.json({  
       success: true,  

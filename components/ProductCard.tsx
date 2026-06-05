@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Product } from '@/types/database';
@@ -13,6 +14,7 @@ interface ProductCardProps {
 
 export default function ProductCard({ product }: ProductCardProps) {
   const { addToCart } = useCart();
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -20,18 +22,37 @@ export default function ProductCard({ product }: ProductCardProps) {
     toast.success(`${product.name} added to cart!`);
   };
 
+  const images = [
+    product.image_url || '/images/placeholder.jpg',
+    ...(product.gallery_images || [])
+  ];
+
+  const handleMouseEnter = () => {
+    if (images.length > 1) {
+      setCurrentImageIndex((prev) => (prev + 1) % images.length);
+    }
+  };
+
+  const handleMouseLeave = () => {
+    setCurrentImageIndex(0);
+  };
+
   return (
     <div className="product-card group">
       <Link href={`/${product.id}`}>
-        <div className="relative h-64 overflow-hidden">
+        <div 
+          className="relative h-64 overflow-hidden"
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
+        >
           {product.badge && (
             <span className="badge">{product.badge}</span>
           )}
           <Image
-            src={product.image_url || '/images/placeholder.jpg'}
+            src={images[currentImageIndex]}
             alt={product.name}
             fill
-            className="object-cover group-hover:scale-110 transition-transform duration-300"
+            className="object-cover transition-opacity duration-300"
           />
           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300 flex items-center justify-center">
             <button

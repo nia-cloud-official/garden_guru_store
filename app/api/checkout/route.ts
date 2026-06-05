@@ -74,6 +74,41 @@ export async function POST(request: NextRequest) {
     const orderId = generateOrderId();
     console.log(`[${requestId}] Generated order ID: ${orderId}`);
 
+    // Auto-create customer account if doesn't exist
+    try {
+      const { data: existingCustomer } = await supabase
+        .from('store_customers')
+        .select('id, email')
+        .eq('email', email)
+        .single();
+
+      if (!existingCustomer) {
+        console.log(`[${requestId}] Creating new customer account for ${email}`);
+        const { data: newCustomer, error: customerError } = await supabase
+          .from('store_customers')
+          .insert({
+            email,
+            first_name: firstName,
+            last_name: lastName,
+            phone: phone,
+            created_at: new Date().toISOString(),
+          })
+          .select()
+          .single();
+
+        if (customerError) {
+          console.warn(`[${requestId}] Could not create customer account:`, customerError);
+          // Don't fail checkout if customer creation fails
+        } else {
+          console.log(`[${requestId}] Customer account created successfully: ${newCustomer.id}`);
+        }
+      } else {
+        console.log(`[${requestId}] Customer account already exists: ${existingCustomer.id}`);
+      }
+    } catch (customerErr) {
+      console.warn(`[${requestId}] Customer account creation failed (continuing with order):`, customerErr);
+    }
+
     const orderInsert: OrderInsert = {
       order_number: orderId,
       first_name: firstName,

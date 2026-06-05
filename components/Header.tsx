@@ -30,6 +30,9 @@ export default function Header() {
             <Link href="/promotions" className="text-gray-700 hover:text-primary font-medium transition-colors">
               Promotions
             </Link>
+            <Link href="/account" className="text-gray-700 hover:text-primary font-medium transition-colors">
+              My Account
+            </Link>
             <Link href="https://www.gardenguru.co.zw/" target="_blank" className="text-gray-700 hover:text-primary font-medium transition-colors">
               About Us
             </Link>
@@ -70,13 +73,16 @@ export default function Header() {
         {/* Mobile Menu */}
         {mobileMenuOpen && (
           <nav className="md:hidden mt-4 pb-4 border-t border-gray-200 pt-4 space-y-2">
-                        <Link href="/request" className="text-gray-700 hover:text-primary font-medium transition-colors">
+            <Link href="/request" className="block text-gray-700 hover:text-primary font-medium transition-colors py-2">
               Send a Request
             </Link>
-            <Link href="/promotions" className="text-gray-700 hover:text-primary font-medium transition-colors">
+            <Link href="/promotions" className="block text-gray-700 hover:text-primary font-medium transition-colors py-2">
               Promotions
             </Link>
-            <Link href="https://www.gardenguru.co.zw/" target="_blank" className="text-gray-700 hover:text-primary font-medium transition-colors">
+            <Link href="/account" className="block text-gray-700 hover:text-primary font-medium transition-colors py-2">
+              My Account
+            </Link>
+            <Link href="https://www.gardenguru.co.zw/" target="_blank" className="block text-gray-700 hover:text-primary font-medium transition-colors py-2">
               About Us
             </Link>
           </nav>
