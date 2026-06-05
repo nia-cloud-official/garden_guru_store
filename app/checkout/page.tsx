@@ -19,9 +19,11 @@ export default function CheckoutPage() {
   const [showPaymentPopup, setShowPaymentPopup] = useState(false);  
   const [paymentPopupUrl, setPaymentPopupUrl] = useState<string>('');
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
-  const [showEcoCashModal, setShowEcoCashModal] = useState(false);
-  const [ecoCashStatus, setEcoCashStatus] = useState<'pending' | 'paid'>('pending');
-  const [currentOrderId, setCurrentOrderId] = useState<string>('');  
+  const [showPaymentStatusModal, setShowPaymentStatusModal] = useState(false);
+  const [paymentStatus, setPaymentStatus] = useState<'pending' | 'paid' | 'failed'>('pending');
+  const [paymentError, setPaymentError] = useState<string>('');
+  const [currentOrderId, setCurrentOrderId] = useState<string>('');
+  const [currentPollUrl, setCurrentPollUrl] = useState<string>('');
   const [proofOfPayment, setProofOfPayment] = useState<File | null>(null);  
   const [formData, setFormData] = useState({  
     firstName: '',  
@@ -155,26 +157,17 @@ export default function CheckoutPage() {
 
       // Clear cart first
       clearCart();
-      
-      // For EcoCash, show pending modal
-      // For Paynow web, show redirect popup
-      if (selectedPaymentMethod === 'ecocash') {
-        console.log('📍 Showing EcoCash pending modal');
+
+      // For Ecocash and Paynow, show redirect popup
+      if (data.redirect_url) {
+        console.log('🎯 Showing payment popup with redirect:', data.redirect_url);
         setCurrentOrderId(data.order_id);
-        setEcoCashStatus('pending');
-        setShowEcoCashModal(true);
-        
-        // Simulate payment completion after 3 seconds (in real implementation, poll the payment status)
-        setTimeout(() => {
-          setEcoCashStatus('paid');
-        }, 3000);
-      } else if (!data.redirect_url) {
+        setCurrentPollUrl(data.poll_url || '');
+        setPaymentPopupUrl(data.redirect_url);
+        setShowPaymentPopup(true);
+      } else {
         console.log('📍 Redirecting to confirmation page');
         router.push(`/confirmation?order_id=${data.order_id}`);
-      } else if (selectedPaymentMethod === 'paynow' && data.redirect_url) {
-        console.log('🎯 Showing payment popup with redirect:', data.redirect_url);  
-        setPaymentPopupUrl(data.redirect_url);  
-        setShowPaymentPopup(true);  
       }  
     } catch (error: any) {  
       console.error('💥 Checkout error caught:', {  
@@ -188,6 +181,53 @@ export default function CheckoutPage() {
     }  
   };  
   
+  const handlePaymentPopupClose = async () => {
+    setShowPaymentPopup(false);
+    
+    // Start polling payment status
+    if (currentPollUrl && currentOrderId) {
+      setPaymentStatus('pending');
+      setShowPaymentStatusModal(true);
+      
+      let isPolling = true;
+      
+      // Poll payment status every 3 seconds
+      const pollInterval = setInterval(async () => {
+        if (!isPolling) return;
+        
+        try {
+          const response = await fetch(`/api/payment-status?poll_url=${encodeURIComponent(currentPollUrl)}&order_id=${currentOrderId}`);
+          const data = await response.json();
+          
+          if (data.success) {
+            if (data.paid) {
+              setPaymentStatus('paid');
+              isPolling = false;
+              clearInterval(pollInterval);
+            } else if (data.status === 'failed') {
+              setPaymentStatus('failed');
+              setPaymentError(data.error || 'Payment failed. Please try again.');
+              isPolling = false;
+              clearInterval(pollInterval);
+            }
+          }
+        } catch (error) {
+          console.error('Error polling payment status:', error);
+        }
+      }, 3000);
+      
+      // Stop polling after 5 minutes
+      setTimeout(() => {
+        if (isPolling) {
+          isPolling = false;
+          clearInterval(pollInterval);
+          setPaymentStatus('failed');
+          setPaymentError('Payment timed out. Please check your order status or contact support.');
+        }
+      }, 300000);
+    }
+  };
+
   const handleBankTransferSubmit = async () => {  
     if (!proofOfPayment) {  
       toast.error('Please upload proof of payment');  
@@ -475,7 +515,7 @@ export default function CheckoutPage() {
         isOpen={showPaymentPopup}
         redirectUrl={paymentPopupUrl}
         paymentMethod={selectedPaymentMethod as 'ecocash' | 'paynow'}
-        onClose={() => setShowPaymentPopup(false)}
+        onClose={handlePaymentPopupClose}
       />
 
       {/* Confirmation Modal */}
@@ -504,11 +544,11 @@ export default function CheckoutPage() {
         </div>
       )}
 
-      {/* EcoCash Payment Status Modal */}
-      {showEcoCashModal && (
+      {/* Payment Status Modal */}
+      {showPaymentStatusModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 text-center">
-            {ecoCashStatus === 'pending' ? (
+            {paymentStatus === 'pending' ? (
               <>
                 <div className="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-6">
                   <svg className="w-10 h-10 text-yellow-600 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -518,10 +558,11 @@ export default function CheckoutPage() {
                 </div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-4">Payment Pending</h3>
                 <p className="text-gray-600 mb-6">
-                  Please check your phone for the EcoCash USSD prompt and complete the payment. This window will update automatically.
+                  Please check your phone for the payment prompt and complete the payment. This window will update automatically once payment is confirmed.
                 </p>
+                <p className="text-sm text-gray-500 mb-4">Order ID: {currentOrderId}</p>
               </>
-            ) : (
+            ) : paymentStatus === 'paid' ? (
               <>
                 <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
                   <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -530,17 +571,47 @@ export default function CheckoutPage() {
                 </div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-4">Payment Successful!</h3>
                 <p className="text-gray-600 mb-6">
-                  Your payment has been received. Thank you for your order!
+                  Your payment has been received and confirmed. Thank you for your order!
                 </p>
                 <button
                   onClick={() => {
-                    setShowEcoCashModal(false);
+                    setShowPaymentStatusModal(false);
                     router.push(`/confirmation?order_id=${currentOrderId}`);
                   }}
                   className="w-full bg-[#00b050] hover:bg-[#009040] text-white py-4 rounded-full font-semibold transition-all"
                 >
                   View Order Details
                 </button>
+              </>
+            ) : (
+              <>
+                <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <svg className="w-10 h-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-4">Payment Failed</h3>
+                <p className="text-gray-600 mb-4">
+                  {paymentError || 'Your payment could not be processed. Please try again.'}
+                </p>
+                <p className="text-sm text-gray-500 mb-6">Order ID: {currentOrderId}</p>
+                <div className="flex gap-4">
+                  <button
+                    onClick={() => setShowPaymentStatusModal(false)}
+                    className="flex-1 btn-secondary"
+                  >
+                    Close
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowPaymentStatusModal(false);
+                      router.push('/shop');
+                    }}
+                    className="flex-1 btn-primary"
+                  >
+                    Continue Shopping
+                  </button>
+                </div>
               </>
             )}
           </div>
