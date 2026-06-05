@@ -166,48 +166,9 @@ export default function CheckoutPage() {
         setPaymentPopupUrl(data.redirect_url);
         setShowPaymentPopup(true);
         
-        // Start polling payment status immediately
-        setPaymentStatus('pending');
-        setShowPaymentStatusModal(true);
-        
-        // Poll payment status every 3 seconds
-        let isPolling = true;
-        const pollInterval = setInterval(async () => {
-          if (!isPolling) return;
-          
-          try {
-            const response = await fetch(`/api/payment-status?poll_url=${encodeURIComponent(data.poll_url || '')}&order_id=${data.order_id}`);
-            const pollData = await response.json();
-            
-            if (pollData.success) {
-              if (pollData.paid) {
-                setPaymentStatus('paid');
-                isPolling = false;
-                clearInterval(pollInterval);
-                setShowPaymentPopup(false);
-              } else if (pollData.status === 'failed') {
-                setPaymentStatus('failed');
-                setPaymentError(pollData.error || 'Payment failed. Please try again.');
-                isPolling = false;
-                clearInterval(pollInterval);
-                setShowPaymentPopup(false);
-              }
-            }
-          } catch (error) {
-            console.error('Error polling payment status:', error);
-          }
-        }, 3000);
-        
-        // Stop polling after 5 minutes
-        setTimeout(() => {
-          if (isPolling) {
-            isPolling = false;
-            clearInterval(pollInterval);
-            setPaymentStatus('failed');
-            setPaymentError('Payment timed out. Please check your order status or contact support.');
-            setShowPaymentPopup(false);
-          }
-        }, 300000);
+        // Don't show payment status modal yet - wait for user to close redirect popup
+        // setPaymentStatus('pending');
+        // setShowPaymentStatusModal(true);
       } else {
         console.log('📍 No redirect URL, showing payment status modal');
         setCurrentOrderId(data.order_id);
@@ -230,7 +191,7 @@ export default function CheckoutPage() {
   const handlePaymentPopupClose = async () => {
     setShowPaymentPopup(false);
     
-    // Start polling payment status
+    // Start polling payment status after user closes redirect popup
     if (currentPollUrl && currentOrderId) {
       setPaymentStatus('pending');
       setShowPaymentStatusModal(true);
