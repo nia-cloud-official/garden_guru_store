@@ -48,47 +48,48 @@ export async function POST(request: NextRequest) {
   
     let proofOfPaymentUrl: string | null = null;  
   
-    // Try to upload file if provided, but don't fail if it doesn't work  
-    if (proofOfPayment) {  
-      // Validate file  
-      if (proofOfPayment.size > MAX_FILE_SIZE) {  
-        return NextResponse.json({ error: 'File too large (max 10MB)' }, { status: 400 });  
-      }  
+    // Upload file if provided - this is now required
+    if (!proofOfPayment) {
+      return NextResponse.json({ error: 'Proof of payment is required' }, { status: 400 });
+    }
   
-      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'application/pdf'];  
-      if (!allowedTypes.includes(proofOfPayment.type)) {  
-        return NextResponse.json({ error: 'Invalid file type' }, { status: 400 });  
-      }  
+    // Validate file
+    if (proofOfPayment.size > MAX_FILE_SIZE) {
+      return NextResponse.json({ error: 'File too large (max 10MB)' }, { status: 400 });
+    }
   
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'application/pdf'];
+    if (!allowedTypes.includes(proofOfPayment.type)) {
+      return NextResponse.json({ error: 'Invalid file type' }, { status: 400 });
+    }
   
-      const fileExt = proofOfPayment.name.split('.').pop();  
-      const fileName = `${orderId}_${Date.now()}.${fileExt}`;  
-      const filePath = `proof-of-payments/${fileName}`;  
+    const fileExt = proofOfPayment.name.split('.').pop();
+    const fileName = `${orderId}_${Date.now()}.${fileExt}`;
+    const filePath = `proof-of-payments/${fileName}`;
   
-      const fileBuffer = await proofOfPayment.arrayBuffer();  
-        
-      try {  
-        const { error: uploadError } = await supabase.storage  
-          .from('store-assets')  
-          .upload(filePath, fileBuffer, {  
-            contentType: proofOfPayment.type,  
-            upsert: false,  
-          });  
+    const fileBuffer = await proofOfPayment.arrayBuffer();
+      
+    try {
+      const { error: uploadError } = await supabase.storage
+        .from('store-assets')
+        .upload(filePath, fileBuffer, {
+          contentType: proofOfPayment.type,
+          upsert: false,
+        });
   
-        if (!uploadError) {  
-          const { data: urlData } = supabase.storage  
-            .from('store-assets')  
-            .getPublicUrl(filePath);  
-          proofOfPaymentUrl = urlData.publicUrl;  
-          console.log(`[${requestId}] File uploaded successfully: ${proofOfPaymentUrl}`);  
-        } else {  
-          console.warn(`[${requestId}] Upload failed (continuing without file):`, uploadError);  
-        }  
-      } catch (uploadErr) {  
-        console.warn(`[${requestId}] Upload error (continuing without file):`, uploadErr);  
-      }  
-    } else {  
-      console.log(`[${requestId}] No file provided, continuing without proof of payment`);  
+      if (uploadError) {
+        console.error(`[${requestId}] Upload failed:`, uploadError);
+        return NextResponse.json({ error: 'Failed to upload proof of payment' }, { status: 500 });
+      }
+  
+      const { data: urlData } = supabase.storage
+        .from('store-assets')
+        .getPublicUrl(filePath);
+      proofOfPaymentUrl = urlData.publicUrl;
+      console.log(`[${requestId}] File uploaded successfully: ${proofOfPaymentUrl}`);
+    } catch (uploadErr) {
+      console.error(`[${requestId}] Upload error:`, uploadErr);
+      return NextResponse.json({ error: 'Failed to upload proof of payment' }, { status: 500 });
     }  
   
       console.log(`[${requestId}] Order ID: ${orderId}`);
