@@ -5,31 +5,31 @@ import { Star } from 'lucide-react';
 const testimonials = [
   {
     id: 1,
-    name: 'Sarah Johnson',
+    name: 'Airports Company of Zimbabwe (ACZ)',
+    author: 'C. Nyoni, Acting Director Airport Operations',
     rating: 5,
-    text: 'The flowers arrived fresh and beautiful! The quality was exceptional and delivery was quick. Highly recommend!',
-    avatar: '👩‍🌾',
+    text: 'Garden Guru demonstrated exceptional professionalism, high-quality workmanship, and responsiveness throughout the SADC Summit landscaping project.',
   },
   {
     id: 2,
-    name: 'Michael Chen',
+    name: 'HESCO Hwange Power Station',
+    author: 'N. Dzumbira, Facility Site Manager',
     rating: 5,
-    text: 'Amazing selection of plants. The staff helped me choose the perfect ones for my garden. Great service!',
-    avatar: '👨‍🍳',
+    text: 'The Garden Guru demonstrated strong work ethics, professionalism, and attention to detail that transformed our surroundings into a cleaner and more organized space.',
   },
   {
     id: 3,
-    name: 'Emma Davis',
-    rating: 4,
-    text: 'Beautiful bouquets and great prices. Will definitely order again. The packaging was really professional.',
-    avatar: '👩‍💼',
+    name: 'National University of Science & Technology (NUST)',
+    author: 'B. Mketo (Eng.), Director PPWE',
+    rating: 5,
+    text: 'The Garden Guru demonstrated professionalism, technical competence, and strong project management skills throughout the Technovation Centre Project.',
   },
   {
     id: 4,
-    name: 'James Wilson',
+    name: 'Zimbabwe Republic Police (ZRP)',
+    author: 'Nyathi. P, Commissioner Chief Staff Officer',
     rating: 5,
-    text: 'Best online garden shop I\'ve found. Fresh products, fair pricing, and excellent customer service!',
-    avatar: '👨‍💻',
+    text: 'The Police does not hesitate to recommend them to anyone willing to do business with them.',
   },
 ];
 
@@ -42,7 +42,7 @@ export default function TestimonialsSection() {
             Loved by <span className="text-[#00b050]">Our Customers</span>
           </h2>
           <p className="text-xl text-gray-600">
-            Join thousands of happy gardeners and plant lovers who trust us
+            Trusted by leading organizations across Zimbabwe
           </p>
         </div>
 
@@ -51,9 +51,11 @@ export default function TestimonialsSection() {
             <div key={testimonial.id} className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm hover:shadow-lg transition-shadow">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex gap-3">
-                  <span className="text-3xl">{testimonial.avatar}</span>
+                  <div className="w-12 h-12 bg-[#00b050]/10 rounded-full flex items-center justify-center">
+                    <Star className="text-[#00b050] fill-[#00b050]" size={20} />
+                  </div>
                   <div>
-                    <h4 className="font-semibold text-gray-900">{testimonial.name}</h4>
+                    <h4 className="font-semibold text-gray-900 text-sm">{testimonial.name}</h4>
                     <div className="flex gap-1 mt-1">
                       {[...Array(5)].map((_, i) => (
                         <Star
@@ -66,7 +68,8 @@ export default function TestimonialsSection() {
                   </div>
                 </div>
               </div>
-              <p className="text-gray-600 text-sm leading-relaxed">{testimonial.text}</p>
+              <p className="text-gray-600 text-sm leading-relaxed mb-3">{testimonial.text}</p>
+              <p className="text-xs text-gray-500 font-medium">{testimonial.author}</p>
             </div>
           ))}
         </div>
