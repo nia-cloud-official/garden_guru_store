@@ -33,9 +33,6 @@ export default function Header() {
             <Link href="/account" className="text-gray-700 hover:text-primary font-medium transition-colors">
               My Account
             </Link>
-            <Link href="https://www.gardenguru.co.zw/" target="_blank" className="text-gray-700 hover:text-primary font-medium transition-colors">
-              About Us
-            </Link>
           </nav>
 
           {/* Cart & Mobile Menu */}
@@ -81,9 +78,6 @@ export default function Header() {
             </Link>
             <Link href="/account" className="block text-gray-700 hover:text-primary font-medium transition-colors py-2">
               My Account
-            </Link>
-            <Link href="https://www.gardenguru.co.zw/" target="_blank" className="block text-gray-700 hover:text-primary font-medium transition-colors py-2">
-              About Us
             </Link>
           </nav>
         )}
