@@ -7,9 +7,9 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '8');
     const offset = parseInt(searchParams.get('offset') || '0');
 
-    // Fetch products from store_products table
+    // Fetch products from plants table (since store_products might not have data)
     const { data: products, error } = await supabase
-      .from('store_products')
+      .from('plants')
       .select('id, name, description, price, image_url, category, stock_quantity')
       .eq('is_active', true)
       .order('created_at', { ascending: false })
