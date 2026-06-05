@@ -41,6 +41,10 @@ export async function POST(request: NextRequest) {
     if (cart.length === 0) {  
       return NextResponse.json({ error: 'Cart is empty' }, { status: 400 });  
     }  
+
+    // Generate order ID upfront (needed for both file upload and order creation)
+    const orderId = generateOrderId();
+    console.log(`[${requestId}] Order ID: ${orderId}`);
   
     let proofOfPaymentUrl: string | null = null;  
   
@@ -56,8 +60,6 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Invalid file type' }, { status: 400 });  
       }  
   
-      const orderId = generateOrderId();  
-      console.log(`[${requestId}] Order ID: ${orderId}`);  
   
       const fileExt = proofOfPayment.name.split('.').pop();  
       const fileName = `${orderId}_${Date.now()}.${fileExt}`;  
