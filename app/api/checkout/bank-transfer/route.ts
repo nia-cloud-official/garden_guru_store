@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';  
 import { supabase } from '@/lib/supabase';  
+import { supabaseAdmin } from '@/lib/supabase-admin';  
 import { generateOrderId } from '@/lib/utils';  
 import type { Database } from '@/types/database';  
   
@@ -70,7 +71,9 @@ export async function POST(request: NextRequest) {
     const fileBuffer = await proofOfPayment.arrayBuffer();
       
     try {
-      const { error: uploadError } = await supabase.storage
+      // Use the service-role admin client for storage writes because the
+      // anon key is blocked by the store-assets bucket's RLS policy.
+      const { error: uploadError } = await supabaseAdmin.storage
         .from('store-assets')
         .upload(filePath, fileBuffer, {
           contentType: proofOfPayment.type,
@@ -82,7 +85,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Failed to upload proof of payment' }, { status: 500 });
       }
   
-      const { data: urlData } = supabase.storage
+      const { data: urlData } = supabaseAdmin.storage
         .from('store-assets')
         .getPublicUrl(filePath);
       proofOfPaymentUrl = urlData.publicUrl;

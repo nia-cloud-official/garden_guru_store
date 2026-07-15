@@ -4,6 +4,7 @@ import { CartProvider } from '@/contexts/CartContext';
 import { Toaster } from 'react-hot-toast';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import WhatsAppButton from '@/components/WhatsAppButton';
 
 export const metadata: Metadata = {
   title: 'The Garden Guru - Fresh Flowers & Plants',
@@ -38,6 +39,7 @@ export default function RootLayout({
           </main>
           <Footer />
           <Toaster position="top-right" />
+          <WhatsAppButton />
         </CartProvider>
       </body>
     </html>

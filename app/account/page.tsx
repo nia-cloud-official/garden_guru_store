@@ -281,7 +281,7 @@ export default function AccountDashboard() {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-semibold text-gray-900">${order.total_amount.toFixed(2)}</div>
+                        <div className="text-sm font-semibold text-gray-900">${(Number(order.total_amount) || 0).toFixed(2)}</div>
                       </td>
                     </tr>
                   ))}

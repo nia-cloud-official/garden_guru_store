@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendEmail } from '@/lib/email';
+import { supabase } from '@/lib/supabase';
 
 export async function POST(request: NextRequest) {
   try {
@@ -8,6 +9,20 @@ export async function POST(request: NextRequest) {
 
     if (!name || !email || !phone || !subject || !message) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+
+    // Persist the request first so it is never lost even if the email
+    // notification below fails (e.g. bad SMTP credentials).
+    const { error: insertError } = await supabase.from('store_requests').insert({
+      name,
+      email,
+      phone,
+      subject,
+      message,
+    } as any);
+
+    if (insertError) {
+      console.error('Failed to persist customer request:', insertError);
     }
 
     // Send email to gardenguru10@gmail.com
@@ -33,12 +48,18 @@ export async function POST(request: NextRequest) {
       </div>
     `;
 
-    await sendEmail({
+    const emailResult = await sendEmail({
       to: 'gardenguru10@gmail.com',
       subject: `New Customer Request: ${subject}`,
       html: emailHtml,
     });
 
+    if (!emailResult.success) {
+      console.error('Request email failed to send (request was still saved):', emailResult.error);
+    }
+
+    // The request is saved in the database regardless of email outcome, so
+    // this is still a genuine success from the customer's point of view.
     return NextResponse.json({ success: true });
   } catch (error: any) {
     console.error('Request API error:', error);
